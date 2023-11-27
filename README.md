@@ -19,8 +19,18 @@ Github Repository for Thesis Project
 > flask --app main run
 ```
 
-# Running Docker
+# Building Docker Compose
 ```
-docker build --tag flask .
-docker run -p 5000:5000 flask
+docker-compose up --build
+```
+
+# Running Docker Compose 
+```
+docker-compose pull
+docker-compose up -d --no-build
+```
+
+# Removing all images and containers
+```
+docker system prune -a
 ```

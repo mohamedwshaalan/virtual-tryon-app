@@ -1,5 +1,6 @@
 .venv/
 __pycache__/
-#igore pycache in all directories
-./newmodel/__pycache__/
-./newmodel/release_model/
+micemodel/__pycache__/
+micemodel/micevenv/
+micemodel/release_model/
+

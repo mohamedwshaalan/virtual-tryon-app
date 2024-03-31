@@ -175,7 +175,9 @@ class DeepLabModel(object):
 		res = cv2.bitwise_and(img,img,mask = mask)
 		bg_removed = res + (255 - cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)) 
 
-		main(bg_removed,height,None)
+		measurements = main(bg_removed,height,None)
+
+		return measurements
 		
 
 

@@ -116,8 +116,8 @@ def extract_measurements(height, vertices):
 
 
     #give body measurements one by one
-    for i in range(0, utils.M_NUM):
-      print("%s: %f" % (utils.M_STR[i], measure[i]))
+    # for i in range(0, utils.M_NUM):
+    #   print("%s: %f" % (utils.M_STR[i], measure[i]))
     
     
     
@@ -132,6 +132,9 @@ def extract_measurements(height, vertices):
 
         
     print("Model Saved...")
+    
+    #given these in order, return them in an array M_STR = ["height", "waist","belly", "chest", "wrist","neck","arm length","thigh","shoulder width","hips", "ankle"]
+    return measure  
 
 
 #if __name__ == "__main__":

@@ -1,8 +1,11 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, jsonify
 from inference import DeepLabModel
 import os
 import tensorflow as tf
 from six.moves import urllib
+import numpy as np
+import json
+
 
 MODEL_NAME = 'xception_coco_voctrainval' 
 
@@ -30,10 +33,10 @@ if not os.path.exists(download_path):
 			     download_path)
   print('download completed! loading DeepLab model...')
 
-#print("here")
 app = Flask(__name__)
 model = DeepLabModel(download_path)
 
+M_STR = ["height", "waist","belly", "chest", "wrist","neck","arm length","thigh","shoulder width","hips", "ankle"]
 
 @app.route('/')
 def index():
@@ -45,10 +48,14 @@ def generate_object_file():
     image_file = request.form.get('image')
     height = request.form.get('height')
 
-    model.get_dimensions(height, image_file)
-
-    return "done"
-
+    measurements = model.get_dimensions(height, image_file)
+    measurement_labels = ["height", "waist", "belly", "chest", "wrist", "neck", "arm length", "thigh", "shoulder width", "hips", "ankle"]
+    
+    formatted_measurements = {}
+    for label, value in zip(measurement_labels, measurements.tolist()):
+        formatted_measurements[label] = value
+    
+    return jsonify(formatted_measurements)
 
 if __name__ == '__main__':
     app.run(host='localhost', port=5000, debug=True)

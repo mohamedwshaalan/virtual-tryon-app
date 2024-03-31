@@ -10,13 +10,14 @@ Github Repository for Thesis Project
 ```
 > git clone https://github.com/mohamedwshaalan/virtual-tryon-app.git
 > cd virtual-tryon-app
-> python -m venv .venv 
+> python -m venv <venv-name> 
 ```
 # Local Testing
 ```
 > source .venv/bin/activate
-> pip install -r requirements.txt
-> flask --app main run
+> pip install -r requirements.
+> export FLASK_APP=app.py
+> flask run
 ```
 
 # Building Docker Compose

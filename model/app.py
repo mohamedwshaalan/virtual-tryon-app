@@ -1,4 +1,3 @@
-# model/app.py
 from flask import Flask, request, jsonify
 from testmodel import SimpleModel  # Assuming model.py is in the same directory
 

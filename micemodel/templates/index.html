@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask API Test</title>
+</head>
+<body>
+    <h1>Flask API Test</h1>
+    <p>Submit data to the API:</p>
+    <form id="dataForm">
+        <label for="weight">Weight:</label>
+        <input type="text" id="weight" name="weight" required>
+        <br>
+        <label for="height">Height:</label>
+        <input type="text" id="height" name="height" required>
+        <br>
+        <label for="hips">Hips:</label>
+        <input type="text" id="hips" name="hips" required>
+        <br>
+        <label for="chest">Chest:</label>
+        <input type="text" id="chest" name="chest" required>
+        <br>
+        <label for="waist">Waist:</label>
+        <input type="text" id="waist" name="waist" required>
+        <br>
+        <label for="gender">Gender:</label>
+        <input type="text" id="gender" name="gender" required>
+        <br>
+        <button type="button" onclick="submitData()">Generate Object File</button>
+    </form>
+
+    <script>
+        function submitData() {
+            const formData = {
+                weight: parseFloat(document.getElementById('weight').value),
+                height: parseFloat(document.getElementById('height').value),
+                hips: parseFloat(document.getElementById('hips').value),
+                chest: parseFloat(document.getElementById('chest').value),
+                waist: parseFloat(document.getElementById('waist').value),
+                gender: document.getElementById('gender').value,
+            };
+    
+            fetch('/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+    
+</body>
+</html>

@@ -1,2 +1,10 @@
 .venv/
 __pycache__/
+hmrmodel/models/
+hmrmodel/deeplab_model/
+micemodel/__pycache__/
+micemodel/micevenv/
+micemodel/release_model/
+hmrmodel/hmrvenv/
+*.tar.gz
+

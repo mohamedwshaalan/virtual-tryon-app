@@ -1,4 +1,5 @@
 from flask import Flask, request, render_template, jsonify
+import requests
 from inference import DeepLabModel
 import os
 import tensorflow as tf
@@ -47,14 +48,20 @@ def generate_object_file():
 
     image_file = request.form.get('image')
     height = request.form.get('height')
-
+    weight = request.form.get('weight')
+    gender = request.form.get('gender')
     measurements = model.get_dimensions(height, image_file)
-    measurement_labels = ["height", "waist", "belly", "chest", "wrist", "neck", "arm length", "thigh", "shoulder width", "hips", "ankle"]
-    
+    measurement_labels = ["height", "waist", "belly", "chest", "wrist", "neck", "arm length", "thigh", "shoulder width", "hips", "ankle", "weight", "gender"]
     formatted_measurements = {}
+    formatted_measurements["weight"] = int(weight)
+    formatted_measurements["gender"] = gender
+
     for label, value in zip(measurement_labels, measurements.tolist()):
-        formatted_measurements[label] = value
+        formatted_measurements[label] = value[0]
     
+
+    requests.post('http://localhost:5001/generate', json=formatted_measurements)
+
     return jsonify(formatted_measurements)
 
 if __name__ == '__main__':

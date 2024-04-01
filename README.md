@@ -10,11 +10,11 @@ Github Repository for Thesis Project
 ```
 > git clone https://github.com/mohamedwshaalan/virtual-tryon-app.git
 > cd virtual-tryon-app
-> python -m venv <venv-name> 
+> python -m venv <venv-name>  #create python env
 ```
 # Local Testing
 ```
-> source .venv/bin/activate
+> source .venv/bin/activate     #activate python env
 > pip install -r requirements.
 > export FLASK_APP=app.py
 > flask run

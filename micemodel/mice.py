@@ -20,7 +20,7 @@ class Model:
         self.vertices = self.vertices.astype('float32')
 
     def save(self):
-        utils.save_obj("/home/g02-f23/Desktop/Application/Thesis-Flutter-Frontend/assets/meshes/result.obj", self.vertices, self.facets+1)
+        utils.save_obj("/home/mahdy/Desktop/Backup/Application/Thesis-Flutter-Frontend/assets/meshes/result.obj", self.vertices, self.facets+1)
 
     def predict(self,data):
         # print("-----------------predict---------------------")

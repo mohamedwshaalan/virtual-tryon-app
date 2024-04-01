@@ -22,7 +22,7 @@ def generate_object_file():
 
     model.generate_object_file(weight, height, hips, chest,waist ,gender)
 
-    return send_file("/home/g02-f23/Desktop/Application/Thesis-Flutter-Frontend/assets/meshes/result.obj")
+    return send_file("/home/mahdy/Desktop/Backup/Application/Thesis-Flutter-Frontend/assets/meshes/result.obj")
 
 if __name__ == '__main__':
     app.run(host='localhost', port=5000, debug=True)

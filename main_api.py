@@ -9,6 +9,10 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///example.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+db.init_app(app)
+
+
+
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -140,6 +144,46 @@ def edit_user():
     
     return jsonify({'message': 'User updated successfully'})
 
+#ADD ITEM TO OUTFIT FROM USER
+@app.route('/add_item', methods=['POST'])
+def add_item():
+    user_id = request.form['user_id']
+    outfit_id = request.form['outfit_id']
+    item_id = request.form['item_id']
+    outfit = Outfit.query.filter_by(id=outfit_id).first()
+    user = User.query.filter_by(id=user_id).first()
+    
+    if outfit.user_id != user_id:
+        return jsonify({'message': 'You do not have permission to add items to this outfit'})
+    
+    if len(outfit.items) == 2:
+        return jsonify({'message': 'This outfit already has two items'})
+    
+    outfit.items.append(Item.query.filter_by(id=item_id).first())
+    db.session.commit()
+    
+    return jsonify({'message': 'Item added to outfit successfully'})
+
+#REMOVE ITEM FROM OUTFIT
+@app.route('/remove_item', methods=['POST'])
+def remove_item():
+    user_id = request.form['user_id']
+    outfit_id = request.form['outfit_id']
+    item_id = request.form['item_id']
+    outfit = Outfit.query.filter_by(id=outfit_id).first()
+    user = User.query.filter_by(id=user_id).first()
+    
+    if outfit.user_id != user_id:
+        return jsonify({'message': 'You do not have permission to remove items from this outfit'})
+    
+    if len(outfit.items) == 0:
+        return jsonify({'message': 'This outfit already has no items'})
+    
+    outfit.items.remove(Item.query.filter_by(id=item_id).first())
+    db.session.commit()
+    
+    return jsonify({'message': 'Item removed from outfit successfully'})
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -167,6 +211,13 @@ def logout():
     return redirect(url_for('login'))
 
 
+engine = db.create_engine('sqlite:///example.db')
+
 if __name__ == '__main__':
-    db.create_all()
-    app.run(debug=True)
+    #close all sessions
+    db.session.close_all()
+    db.drop_all()
+
+    #db.create_all()
+    app.run(debug=False)
+    

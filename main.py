@@ -1,11 +1,11 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import os
+import base64
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = 'uploads/images'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -23,6 +23,7 @@ class User(db.Model):
     password = db.Column(db.String(150))
     first_name = db.Column(db.String(150))
     outfits = db.relationship('Outfit', backref='user', lazy='dynamic')
+    body_model = db.Column(db.LargeBinary)
     weight = db.Column(db.Integer)
     height = db.Column(db.Integer)
 
@@ -35,9 +36,9 @@ class Item(db.Model):
     description = db.Column(db.Text)
     garment_type_id = db.Column(db.Integer, db.ForeignKey('garment_type.id'), nullable=False)
     garment = db.relationship('GarmentType', backref=db.backref('items', lazy=True))
-    front_image = db.Column(db.String(255))
-    back_image = db.Column(db.String(255))
-    texture = db.Column(db.String(255))
+    front_image = db.Column(db.LargeBinary)
+    back_image = db.Column(db.LargeBinary)
+    texture = db.Column(db.LargeBinary)
     vendor_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
     outfits = db.relationship('Outfit', secondary='outfit_item_association', backref='items', lazy='dynamic')
 
@@ -54,7 +55,7 @@ class Vendor(db.Model):
 class GarmentType(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     garment_type = db.Column(db.String(150), nullable=False)
-    object_file = db.Column(db.String(255))
+    object_file = db.Column(db.LargeBinary)
 
 class Outfit(db.Model):
     id  = db.Column(db.Integer, primary_key=True)
@@ -68,11 +69,20 @@ class Outfit(db.Model):
 def index():
     return "Hello, World!"
 
+#Get body of user
+@app.route('/body/<user_id>', methods=['GET'])
+def get_body(user_id): 
+    user = User.query.filter_by(id=user_id).first()
+    return jsonify({'body': base64.b64encode(user.body_model).decode('utf-8')})
+
 #Get certain item
 @app.route('/item/<item_id>', methods=['GET'])
 def get_item(item_id):
+    #get items front and back images and texture and decode them using base 64 then return
     item = Item.query.filter_by(id=item_id).first()
-    item_data = {'id': item.id, 'item_name': item.item_name, 'description': item.description, 'front_image': item.front_image, 'back_image': item.back_image, 'texture': item.texture}
+    item_data = {'id': item.id, 'item_name': item.item_name, 'description': item.description, 
+    'front_image': base64.b64encode(item.front_image).decode('utf-8'), 'back_image': base64.b64encode(item.back_image).decode('utf-8'), 
+    'texture': base64.b64encode(item.texture).decode('utf-8')}
     return jsonify({'item': item_data})
     
 #Get all items
@@ -81,7 +91,9 @@ def get_items():
     items = Item.query.all()
     output = []
     for item in items:
-        item_data = {'id': item.id, 'item_name': item.item_name, 'description': item.description, 'front_image': item.front_image, 'back_image': item.back_image, 'texture': item.texture}
+        item_data = {'id': item.id, 'item_name': item.item_name, 'description': item.description, 
+        'front_image': base64.b64encode(item.front_image).decode('utf-8'), 'back_image': base64.b64encode(item.back_image).decode('utf-8'), 
+        'texture': base64.b64encode(item.texture).decode('utf-8')}
         output.append(item_data)
     return jsonify({'items': output})
 
@@ -95,7 +107,9 @@ def get_likes(user_id):
     for like in likes:
         item = Item.query.filter_by(id=like.item_id).first()
         if item is not None:
-            item_data = {'id': item.id, 'item_name': item.item_name, 'description': item.description, 'front_image': item.front_image, 'back_image': item.back_image, 'texture': item.texture}
+            item_data = {'id': item.id, 'item_name': item.item_name, 'description': item.description, 
+            'front_image': base64.b64encode(item.front_image).decode('utf-8'), 'back_image': base64.b64encode(item.back_image).decode('utf-8'), 
+            'texture': base64.b64encode(item.texture).decode('utf-8')}
             output.append(item_data)
         else:
             print(f"Item with id {like.item_id} not found")  
@@ -165,6 +179,52 @@ def get_user(user_id):
 
 if __name__ == '__main__':
     with app.app_context():
+        db.drop_all()
         db.create_all() 
+        #populate the db with some data
+        #create garment types
+        garment1 = GarmentType(garment_type='top', object_file=b'')
+        garment2 = GarmentType(garment_type='bottom', object_file=b'')
+        db.session.add(garment1)
+        db.session.add(garment2)
+        db.session.commit()
+
+        #create vendors
+        vendor1 = Vendor(vendor_name='Zara', vendor_link='https://www.zara.com')
+        vendor2 = Vendor(vendor_name='H&M', vendor_link='https://www.hm.com')
+        db.session.add(vendor1)
+        db.session.add(vendor2)
+        db.session.commit()
+
+        #create items
+        item1 = Item(item_name='Blue Shirt', description='A blue shirt', garment_type_id=1, front_image=b'', back_image=b'', texture=b'', vendor_id=1)
+        item2 = Item(item_name='Black Pants', description='Black pants', garment_type_id=2, front_image=b'', back_image=b'', texture=b'', vendor_id=2)
+        db.session.add(item1)
+        db.session.add(item2)
+        db.session.commit()
+
+        #create users
+        user1 = User(email = 'email 1', password = 'password 1', first_name = 'first name 1', body_model=b'', weight=150, height=70)
+        user2 = User(email = 'email 2', password = 'password 2', first_name = 'first name 2', body_model=b'', weight=160, height=72)
+        db.session.add(user1)
+        db.session.add(user2)
+        db.session.commit()
+
+        #create outfits
+        outfit1 = Outfit(name='Outfit 1', user_id=1)
+        outfit2 = Outfit(name='Outfit 2', user_id=2)
+        db.session.add(outfit1)
+        db.session.add(outfit2)
+
+        #add items to outfits
+        outfit1.items.append(item1)
+        outfit2.items.append(item2)
+        db.session.commit()
+
+    
+
+
+
+
 
     app.run(debug=True)

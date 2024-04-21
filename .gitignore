@@ -8,5 +8,6 @@ hmrmodel/hmrvenv/
 salmarecommendationmodel/salmarecvenv
 salmarecommendationmodel/fashion-dataset/
 salmarecommendationmodel/df_embeddings.csv
+salmarecommendationmodel/zara-dataset/
 *.tar.gz
 

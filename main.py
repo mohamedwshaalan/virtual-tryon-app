@@ -88,11 +88,17 @@ def get_items():
 #Get likes for certain user
 @app.route('/like/<user_id>', methods=['GET'])
 def get_likes(user_id):
+    #get email of user with this user email
+    #user = User.query.filter_by(email=user_email).first()
     likes = Likes.query.filter_by(user_id=user_id)
     output = []
     for like in likes:
-        like_data = {'id': like.id, 'user_id': like.user_id, 'item_id': like.item_id}
-        output.append(like_data)
+        item = Item.query.filter_by(id=like.item_id).first()
+        if item is not None:
+            item_data = {'id': item.id, 'item_name': item.item_name, 'description': item.description, 'front_image': item.front_image, 'back_image': item.back_image, 'texture': item.texture}
+            output.append(item_data)
+        else:
+            print(f"Item with id {like.item_id} not found")  
     return jsonify({'likes': output})
 
 #Get outfits for certain user

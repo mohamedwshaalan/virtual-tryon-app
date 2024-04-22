@@ -80,28 +80,40 @@ def get_body(user_id):
 def get_item(item_id):
     #get items front and back images and texture and decode them using base 64 then return
     item = Item.query.filter_by(id=item_id).first()
+    #get vendor of this item
+    vendor = Vendor.query.filter_by(id=item.vendor_id).first()
     item_data = {'id': item.id, 'item_name': item.item_name, 'description': item.description, 
     'front_image': base64.b64encode(item.front_image).decode('utf-8'), 'back_image': base64.b64encode(item.back_image).decode('utf-8'), 
-    'texture': base64.b64encode(item.texture).decode('utf-8')}
+    'texture': base64.b64encode(item.texture).decode('utf-8'), 'vendor_link' : vendor.vendor_link}
     return jsonify({'item': item_data})
     
 #Get all items
 @app.route('/item', methods=['GET'])
 def get_items():
     items = Item.query.all()
+    data = request.get_json()
+    if 'user_id' not in data:
+        return jsonify({'message': 'No user id provided'})
+
+    user = User.query.filter_by(id=data['user_id']).first()    
     output = []
     for item in items:
-        item_data = {'id': item.id, 'item_name': item.item_name, 'description': item.description, 
-        'front_image': base64.b64encode(item.front_image).decode('utf-8'), 'back_image': base64.b64encode(item.back_image).decode('utf-8'), 
-        'texture': base64.b64encode(item.texture).decode('utf-8')}
+        vendor = Vendor.query.filter_by(id=item.vendor_id).first()
+        like = Likes.query.filter_by(user_id=user.id, item_id=item.id).first()
+        if like is not None:
+            item_data = {'id': item.id, 'item_name': item.item_name, 'description': item.description, 
+            'front_image': base64.b64encode(item.front_image).decode('utf-8'), 'back_image': base64.b64encode(item.back_image).decode('utf-8'), 
+            'texture': base64.b64encode(item.texture).decode('utf-8'), 'vendor_link' : vendor.vendor_link, 'liked': True}
+        else:
+            item_data = {'id': item.id, 'item_name': item.item_name, 'description': item.description, 
+            'front_image': base64.b64encode(item.front_image).decode('utf-8'), 'back_image': base64.b64encode(item.back_image).decode('utf-8'), 
+            'texture': base64.b64encode(item.texture).decode('utf-8'), 'vendor_link' : vendor.vendor_link, 'liked': False}
         output.append(item_data)
     return jsonify({'items': output})
 
 #Get likes for certain user
 @app.route('/like/<user_id>', methods=['GET'])
 def get_likes(user_id):
-    #get email of user with this user email
-    #user = User.query.filter_by(email=user_email).first()
     likes = Likes.query.filter_by(user_id=user_id)
     output = []
     for like in likes:
@@ -129,10 +141,22 @@ def get_outfits(user_id):
 @app.route('/like', methods=['POST'])
 def like():
     data = request.get_json()
+    like = Likes.query.filter_by(user_id=data['user_id'], item_id=data['item_id']).first()
+    if like is not None:
+        return jsonify({'message': 'User already liked this item'})
     new_like = Likes(user_id=data['user_id'], item_id=data['item_id'])
     db.session.add(new_like)
     db.session.commit()
     return jsonify({'message': 'New like created'})
+
+#remove like from user
+@app.route('/unlike', methods=['POST'])
+def unlike():
+    data = request.get_json()
+    like = Likes.query.filter_by(user_id=data['user_id'], item_id=data['item_id']).first()
+    db.session.delete(like)
+    db.session.commit()
+    return jsonify({'message': 'Like removed successfully'})
 
 #let user update their info
 @app.route('/edit', methods=['POST'])
@@ -158,6 +182,9 @@ def add_outfit():
 def add_item():
     data = request.get_json()
     user = User.query.filter_by(id=data['user_id']).first()
+    #check if user_id and outfit_id are sent in request
+    if 'user_id' not in data or 'outfit_id' not in data:
+        return jsonify({'message': 'User id or outfit id not provided'})
     outfit = Outfit.query.filter_by(id=data['outfit_id']).first()
     if outfit.user_id != user.id:
         return jsonify({'message': 'User does not have permission to add item to outfit'})
@@ -171,6 +198,24 @@ def add_item():
     db.session.commit()
     return jsonify({'message': 'Item added to outfit successfully'})
 
+#let user remove item from outfit
+@app.route('/item', methods=['DELETE'])
+def remove_item():
+    data = request.get_json()
+    user = User.query.filter_by(id=data['user_id']).first()
+    outfit = Outfit.query.filter_by(id=data['outfit_id']).first()
+    if outfit.user_id != user.id:
+        return jsonify({'message': 'User does not have permission to remove item from outfit'})
+
+    item = Item.query.filter_by(id=data['item_id']).first()
+    if item.garment_type_id == 1:
+        outfit.top_id = None
+    elif item.garment_type_id == 2:
+        outfit.bottom_id = None
+    
+    db.session.commit()
+    return jsonify({'message': 'Item removed from outfit successfully'})
+
 @app.route('/user/<user_id>', methods=['GET'])
 def get_user(user_id):
     user = User.query.filter_by(id=user_id).first()
@@ -179,47 +224,47 @@ def get_user(user_id):
 
 if __name__ == '__main__':
     with app.app_context():
-        db.drop_all()
+        # db.drop_all()
         db.create_all() 
-        #populate the db with some data
-        #create garment types
-        garment1 = GarmentType(garment_type='top', object_file=b'')
-        garment2 = GarmentType(garment_type='bottom', object_file=b'')
-        db.session.add(garment1)
-        db.session.add(garment2)
-        db.session.commit()
+        # #populate the db with some data
+        # #create garment types
+        # garment1 = GarmentType(garment_type='top', object_file=b'')
+        # garment2 = GarmentType(garment_type='bottom', object_file=b'')
+        # db.session.add(garment1)
+        # db.session.add(garment2)
+        # db.session.commit()
 
-        #create vendors
-        vendor1 = Vendor(vendor_name='Zara', vendor_link='https://www.zara.com')
-        vendor2 = Vendor(vendor_name='H&M', vendor_link='https://www.hm.com')
-        db.session.add(vendor1)
-        db.session.add(vendor2)
-        db.session.commit()
+        # #create vendors
+        # vendor1 = Vendor(vendor_name='Zara', vendor_link='https://www.zara.com')
+        # vendor2 = Vendor(vendor_name='H&M', vendor_link='https://www.hm.com')
+        # db.session.add(vendor1)
+        # db.session.add(vendor2)
+        # db.session.commit()
 
-        #create items
-        item1 = Item(item_name='Blue Shirt', description='A blue shirt', garment_type_id=1, front_image=b'', back_image=b'', texture=b'', vendor_id=1)
-        item2 = Item(item_name='Black Pants', description='Black pants', garment_type_id=2, front_image=b'', back_image=b'', texture=b'', vendor_id=2)
-        db.session.add(item1)
-        db.session.add(item2)
-        db.session.commit()
+        # #create items
+        # item1 = Item(item_name='Blue Shirt', description='A blue shirt', garment_type_id=1, front_image=b'', back_image=b'', texture=b'', vendor_id=1)
+        # item2 = Item(item_name='Black Pants', description='Black pants', garment_type_id=2, front_image=b'', back_image=b'', texture=b'', vendor_id=2)
+        # db.session.add(item1)
+        # db.session.add(item2)
+        # db.session.commit()
 
-        #create users
-        user1 = User(email = 'email 1', password = 'password 1', first_name = 'first name 1', body_model=b'', weight=150, height=70)
-        user2 = User(email = 'email 2', password = 'password 2', first_name = 'first name 2', body_model=b'', weight=160, height=72)
-        db.session.add(user1)
-        db.session.add(user2)
-        db.session.commit()
+        # #create users
+        # user1 = User(email = 'email 1', password = 'password 1', first_name = 'first name 1', body_model=b'', weight=150, height=70)
+        # user2 = User(email = 'email 2', password = 'password 2', first_name = 'first name 2', body_model=b'', weight=160, height=72)
+        # db.session.add(user1)
+        # db.session.add(user2)
+        # db.session.commit()
 
-        #create outfits
-        outfit1 = Outfit(name='Outfit 1', user_id=1)
-        outfit2 = Outfit(name='Outfit 2', user_id=2)
-        db.session.add(outfit1)
-        db.session.add(outfit2)
+        # #create outfits
+        # outfit1 = Outfit(name='Outfit 1', user_id=1)
+        # outfit2 = Outfit(name='Outfit 2', user_id=2)
+        # db.session.add(outfit1)
+        # db.session.add(outfit2)
 
-        #add items to outfits
-        outfit1.items.append(item1)
-        outfit2.items.append(item2)
-        db.session.commit()
+        # #add items to outfits
+        # outfit1.items.append(item1)
+        # outfit2.items.append(item2)
+        # db.session.commit()
 
     
 

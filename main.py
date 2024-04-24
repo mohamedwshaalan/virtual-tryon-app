@@ -82,32 +82,56 @@ def get_item(item_id):
     item = Item.query.filter_by(id=item_id).first()
     #get vendor of this item
     vendor = Vendor.query.filter_by(id=item.vendor_id).first()
-    item_data = {'id': item.id, 'item_name': item.item_name, 'description': item.description, 
-    'front_image': base64.b64encode(item.front_image).decode('utf-8'), 'back_image': base64.b64encode(item.back_image).decode('utf-8'), 
-    'texture': base64.b64encode(item.texture).decode('utf-8'), 'vendor_link' : vendor.vendor_link}
+    item_data = {
+        'id': item.id, 
+        'item_name': item.item_name, 
+        'description': item.description, 
+        'front_image': item.front_image.decode('utf-8'), 
+        'back_image': item.back_image.decode('utf-8'), 
+        'texture': item.texture.decode('utf-8'), 
+        'vendor_link' : vendor.vendor_link
+    }
     return jsonify({'item': item_data})
     
 #Get all items
 @app.route('/item', methods=['GET'])
 def get_items():
-    items = Item.query.all()
-    data = request.get_json()
-    if 'user_id' not in data:
+    user_id = request.args.get('user_id')
+    if not user_id:
         return jsonify({'message': 'No user id provided'})
 
-    user = User.query.filter_by(id=data['user_id']).first()    
+    user = User.query.filter_by(id=user_id).first()    
+    if not user:
+        return jsonify({'message': 'Invalid user id'})
+
+    items = Item.query.all()
     output = []
     for item in items:
         vendor = Vendor.query.filter_by(id=item.vendor_id).first()
         like = Likes.query.filter_by(user_id=user.id, item_id=item.id).first()
         if like is not None:
-            item_data = {'id': item.id, 'item_name': item.item_name, 'description': item.description, 
-            'front_image': base64.b64encode(item.front_image).decode('utf-8'), 'back_image': base64.b64encode(item.back_image).decode('utf-8'), 
-            'texture': base64.b64encode(item.texture).decode('utf-8'), 'vendor_link' : vendor.vendor_link, 'liked': True}
+            item_data = {
+                'id': item.id,
+                'item_name': item.item_name,
+                'description': item.description,
+                'front_image': item.front_image.decode('utf-8'),
+                'back_image': item.back_image.decode('utf-8'),
+                'texture': item.texture.decode('utf-8'),
+                'vendor_link': vendor.vendor_link,
+                'liked': True
+            }
+            
         else:
-            item_data = {'id': item.id, 'item_name': item.item_name, 'description': item.description, 
-            'front_image': base64.b64encode(item.front_image).decode('utf-8'), 'back_image': base64.b64encode(item.back_image).decode('utf-8'), 
-            'texture': base64.b64encode(item.texture).decode('utf-8'), 'vendor_link' : vendor.vendor_link, 'liked': False}
+            item_data = {
+                'id': item.id,
+                'item_name': item.item_name,
+                'description': item.description,
+                'front_image': item.front_image.decode('utf-8'),
+                'back_image': item.back_image.decode('utf-8'),
+                'texture': item.texture.decode('utf-8'),
+                'vendor_link': vendor.vendor_link,
+                'liked': False
+            }
         output.append(item_data)
     return jsonify({'items': output})
 
@@ -119,9 +143,13 @@ def get_likes(user_id):
     for like in likes:
         item = Item.query.filter_by(id=like.item_id).first()
         if item is not None:
-            item_data = {'id': item.id, 'item_name': item.item_name, 'description': item.description, 
-            'front_image': base64.b64encode(item.front_image).decode('utf-8'), 'back_image': base64.b64encode(item.back_image).decode('utf-8'), 
-            'texture': base64.b64encode(item.texture).decode('utf-8')}
+            item_data = {
+                'id': item.id, 
+                'item_name': item.item_name, 
+                'description': item.description, 
+                'front_image': item.front_image.decode('utf-8'), 
+                'back_image': item.back_image.decode('utf-8'), 
+                'texture': item.texture.decode('utf-8')}
             output.append(item_data)
         else:
             print(f"Item with id {like.item_id} not found")  
@@ -226,8 +254,8 @@ if __name__ == '__main__':
     with app.app_context():
         # db.drop_all()
         db.create_all() 
-        # #populate the db with some data
-        # #create garment types
+        #populate the db with some data
+        #create garment types
         # garment1 = GarmentType(garment_type='top', object_file=b'')
         # garment2 = GarmentType(garment_type='bottom', object_file=b'')
         # db.session.add(garment1)
@@ -241,14 +269,21 @@ if __name__ == '__main__':
         # db.session.add(vendor2)
         # db.session.commit()
 
-        # #create items
-        # item1 = Item(item_name='Blue Shirt', description='A blue shirt', garment_type_id=1, front_image=b'', back_image=b'', texture=b'', vendor_id=1)
-        # item2 = Item(item_name='Black Pants', description='Black pants', garment_type_id=2, front_image=b'', back_image=b'', texture=b'', vendor_id=2)
-        # db.session.add(item1)
-        # db.session.add(item2)
-        # db.session.commit()
+        # create an item with the image encoded not the path
+        #open the image file 
+        #image = open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/front5.jpeg', 'rb')
 
-        # #create users
+        item1 = Item(item_name='Salma Shirt', description='A blue shirt', garment_type_id=1, 
+                     front_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/front5.jpeg', 'rb').read()),
+                       back_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/back5.jpeg', 'rb').read()), texture=b'', vendor_id=1)
+        item2 = Item(item_name='Salma Pants', description='Black pants', garment_type_id=2, 
+                     front_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/front19.jpeg', 'rb').read()),
+                      back_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/back19.jpeg', 'rb').read()), texture=b'', vendor_id=2)
+        db.session.add(item1)
+        db.session.add(item2)
+        db.session.commit()
+
+        #create users
         # user1 = User(email = 'email 1', password = 'password 1', first_name = 'first name 1', body_model=b'', weight=150, height=70)
         # user2 = User(email = 'email 2', password = 'password 2', first_name = 'first name 2', body_model=b'', weight=160, height=72)
         # db.session.add(user1)

@@ -2,14 +2,14 @@ from flask import Flask, request, jsonify,  redirect, url_for, render_template, 
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, LoginManager, login_user, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-
+from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///example.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///signup_login.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
-
-db.init_app(app)
+bcrypt = Bcrypt(app)
+#db.init_app(app)
 
 
 
@@ -54,6 +54,12 @@ class Likes(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     item_id = db.Column(db.Integer, db.ForeignKey('item.id'))
 
+
+outfit_item_association = db.Table('outfit_item_association',
+    db.Column('outfit_id', db.Integer, db.ForeignKey('outfit.id')),
+    db.Column('item_id', db.Integer, db.ForeignKey('item.id'))
+)
+
 @app.route('/')
 def index():
     return "Hello, World!"
@@ -63,7 +69,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 #GET SIGNUP PAGE AND SIGNUP 
-@app.route('/signup', methods=['GET', 'POST'])
+@app.route('/signup', methods=['POST'])
 def signup():
     if request.method=='POST':
         email = request.form['email']
@@ -73,20 +79,23 @@ def signup():
         height = request.form['height']
         
         existing_user = User.query.filter_by(email=email).first()
+        # if existing_user:
+        #     #flash('Email address already exists.')
+        #     return redirect(url_for('signup'))
         if existing_user:
-            flash('Email address already exists.')
-            return redirect(url_for('signup'))
-        
-        hashed_password = generate_password_hash(password, method='sha256') # Hash the password before storing it
+            return jsonify({'message': 'Email address already exists.'})
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        #hashed_password = generate_password_hash(password, method='sha256') # Hash the password before storing it
         
         new_user = User(email=email, password=hashed_password, first_name=first_name, weight = weight, height = height) # Create a new user
         db.session.add(new_user)
         db.session.commit()
+        return jsonify({'message': 'User created successfully'})
         
-        flash('You have successfully signed up!')
-        return redirect(url_for('login'))
+        #flash('You have successfully signed up!')
+        #return redirect(url_for('login'))
 
-    return render_template('signup.html')
+    
 
 #GET USER
 @app.route('/user/<id>', methods=['GET'])
@@ -184,6 +193,8 @@ def remove_item():
     
     return jsonify({'message': 'Item removed from outfit successfully'})
 
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -195,15 +206,20 @@ def login():
         
         if user:
             # Check password
-            if check_password_hash(user.password, password):
-                login_user(user)
-                flash('Logged in successfully.')
+            if bcrypt.check_password_hash(user.password, password):
+                #login_user(user)
+                return jsonify({'message': 'Login successful'})
+
                 return redirect(url_for('dashboard'))
+            else:
+                return jsonify({'message': 'Invalid email or password.'})
+                #flash('Invalid email or password.')
+                return redirect(url_for('login'))
         
-        flash('Invalid email or password.')
+        #flash('Invalid email or password.')
         return redirect(url_for('login'))
     
-    return render_template('login.html')
+    
 
 @app.route('/logout')
 def logout():
@@ -214,10 +230,12 @@ def logout():
 engine = db.create_engine('sqlite:///example.db')
 
 if __name__ == '__main__':
-    #close all sessions
-    db.session.close_all()
-    db.drop_all()
-
+    # #close all sessions
+    # db.session.close_all()
+    # db.drop_all()
+    with app.app_context():
+        # db.drop_all()
+        db.create_all() # Create tables for our models
     #db.create_all()
     app.run(debug=False)
     

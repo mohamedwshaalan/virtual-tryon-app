@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///signup_login.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
@@ -72,25 +72,27 @@ def load_user(user_id):
 @app.route('/signup', methods=['POST'])
 def signup():
     if request.method=='POST':
-        email = request.form['email']
-        password = request.form['password']
-        first_name = request.form['first_name']
-        weight = request.form['weight']
-        height = request.form['height']
+
+        data = request.get_json()
+        # email = request.form['email']
+        # password = request.form['password']
+        # first_name = request.form['first_name']
+        # weight = request.form['weight']
+        # height = request.form['height']
         
-        existing_user = User.query.filter_by(email=email).first()
+        existing_user = User.query.filter_by(email=data['email']).first()
         # if existing_user:
         #     #flash('Email address already exists.')
         #     return redirect(url_for('signup'))
         if existing_user:
             return jsonify({'message': 'Email address already exists.'})
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        hashed_password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
         #hashed_password = generate_password_hash(password, method='sha256') # Hash the password before storing it
         
-        new_user = User(email=email, password=hashed_password, first_name=first_name, weight = weight, height = height) # Create a new user
+        new_user = User(email=data['email'], password=hashed_password, first_name=data['first_name'], weight = data['weight'], height = data['height']) # Create a new user
         db.session.add(new_user)
         db.session.commit()
-        return jsonify({'message': 'User created successfully'})
+        return jsonify({'message': 'User created successfully', 'user_id': new_user.id})
         
         #flash('You have successfully signed up!')
         #return redirect(url_for('login'))
@@ -198,17 +200,19 @@ def remove_item():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
+        data = request.get_json()
+
+        # email = request.form['email']
+        # password = request.form['password']
         
         # Find user by email
-        user = User.query.filter_by(email=email).first()
+        user = User.query.filter_by(email=data['email']).first()
         
         if user:
             # Check password
-            if bcrypt.check_password_hash(user.password, password):
+            if bcrypt.check_password_hash(user.password, data['password']):
                 #login_user(user)
-                return jsonify({'message': 'Login successful'})
+                return jsonify({'message': 'Login successful', 'user_id': user.id})
 
                 return redirect(url_for('dashboard'))
             else:

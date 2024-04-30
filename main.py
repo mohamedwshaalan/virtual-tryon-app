@@ -101,8 +101,7 @@ def get_item(item_id):
 #Get all items
 @app.route('/item', methods=['GET'])
 def get_items():
-    data = request.get_json()
-    user_id = data.get('user_id')
+    user_id = request.args.get('user_id')
     #print(user_id)
     if not user_id:
         return jsonify({'message': 'No user id provided'})

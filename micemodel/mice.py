@@ -20,7 +20,7 @@ class Model:
         self.vertices = self.vertices.astype('float32')
 
     def save(self):
-        utils.save_obj("/home/mahdy/Desktop/Backup/Application/Thesis-Flutter-Frontend/assets/meshes/result.obj", self.vertices, self.facets+1)
+        utils.return_obj("/home/mahdy/Desktop/Backup/Application/Thesis-Flutter-Frontend/assets/meshes/result.obj", self.vertices, self.facets+1)
 
     def predict(self,data):
         # print("-----------------predict---------------------")
@@ -64,7 +64,21 @@ class Model:
 
         data = np.array(data).reshape(utils.M_NUM, 1)
         self.predict(data)
-        self.save()
+
+        file = open("micemodel/dump/body_model.obj", 'w')
+        v = self.vertices
+        f = self.facets + 1
+        for i in range(0, v.shape[0]):
+            file.write('v %f %f %f\n'%(v[i][0], v[i][1], v[i][2]))
+        for i in range(0, f.shape[0]):
+            file.write('f %d %d %d\n'%(f[i][0], f[i][1], f[i][2]))
+        file.close()
+        return file
+
+        #return self.save()
+        #return self.save()
+        #return the generated file  
+
 
 if __name__ == "__main__":
     model = Model()

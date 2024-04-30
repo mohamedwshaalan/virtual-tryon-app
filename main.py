@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 import os
 import base64
+import os
 
 app = Flask(__name__)
 
@@ -10,7 +12,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
-
 
 outfit_item_association = db.Table('outfit_item_association',
     db.Column('outfit_id', db.Integer, db.ForeignKey('outfit.id'), primary_key=True),
@@ -26,6 +27,7 @@ class User(db.Model):
     body_model = db.Column(db.LargeBinary)
     weight = db.Column(db.Integer)
     height = db.Column(db.Integer)
+    gender = db.Column(db.String(150))
 
     def __repr__(self):
         return f'<User {self.username}>'
@@ -36,6 +38,7 @@ class Item(db.Model):
     description = db.Column(db.Text)
     garment_type_id = db.Column(db.Integer, db.ForeignKey('garment_type.id'), nullable=False)
     garment = db.relationship('GarmentType', backref=db.backref('items', lazy=True))
+    item_link  = db.Column(db.String(255))
     front_image = db.Column(db.LargeBinary)
     back_image = db.Column(db.LargeBinary)
     texture = db.Column(db.LargeBinary)
@@ -53,6 +56,7 @@ class Vendor(db.Model):
     vendor_link = db.Column(db.String(255))
     
 class GarmentType(db.Model):
+    
     id = db.Column(db.Integer, primary_key=True)
     garment_type = db.Column(db.String(150), nullable=False)
     object_file = db.Column(db.LargeBinary)
@@ -89,6 +93,7 @@ def get_item(item_id):
         'front_image': item.front_image.decode('utf-8'), 
         'back_image': item.back_image.decode('utf-8'), 
         'texture': item.texture.decode('utf-8'), 
+        'vendor_name': vendor.vendor_name, 
         'vendor_link' : vendor.vendor_link
     }
     return jsonify({'item': item_data})
@@ -96,7 +101,9 @@ def get_item(item_id):
 #Get all items
 @app.route('/item', methods=['GET'])
 def get_items():
-    user_id = request.args.get('user_id')
+    data = request.get_json()
+    user_id = data.get('user_id')
+    #print(user_id)
     if not user_id:
         return jsonify({'message': 'No user id provided'})
 
@@ -117,9 +124,11 @@ def get_items():
                 'front_image': item.front_image.decode('utf-8'),
                 'back_image': item.back_image.decode('utf-8'),
                 'texture': item.texture.decode('utf-8'),
+                'vendor': vendor.vendor_name,
                 'vendor_link': vendor.vendor_link,
-                'liked': True
-            }
+                'liked': True,
+                'garment_type': 'top' if item.garment_type_id == 1 or item.garment_type_id  == 2 or item.garment_type_id == 3 else 'bottom'
+           }
             
         else:
             item_data = {
@@ -129,8 +138,10 @@ def get_items():
                 'front_image': item.front_image.decode('utf-8'),
                 'back_image': item.back_image.decode('utf-8'),
                 'texture': item.texture.decode('utf-8'),
+                'vendor': vendor.vendor_name,
                 'vendor_link': vendor.vendor_link,
-                'liked': False
+                'liked': False,
+                'garment_type': 'top' if item.garment_type_id == 1 or item.garment_type_id  == 2 or item.garment_type_id == 3 else 'bottom'
             }
         output.append(item_data)
     return jsonify({'items': output})
@@ -142,6 +153,7 @@ def get_likes(user_id):
     output = []
     for like in likes:
         item = Item.query.filter_by(id=like.item_id).first()
+        vendor = Vendor.query.filter_by(id=item.vendor_id).first()
         if item is not None:
             item_data = {
                 'id': item.id, 
@@ -149,7 +161,9 @@ def get_likes(user_id):
                 'description': item.description, 
                 'front_image': item.front_image.decode('utf-8'), 
                 'back_image': item.back_image.decode('utf-8'), 
-                'texture': item.texture.decode('utf-8')}
+                'texture': item.texture.decode('utf-8'),
+                'vendor': vendor.vendor_name,
+                'vendor_link': vendor.vendor_link}
             output.append(item_data)
         else:
             print(f"Item with id {like.item_id} not found")  
@@ -163,6 +177,7 @@ def get_outfits(user_id):
     for outfit in outfits:
         outfit_data = {'id': outfit.id, 'name': outfit.name, 'user_id': outfit.user_id, 'top_id': outfit.top_id, 'bottom_id': outfit.bottom_id}
         output.append(outfit_data)
+
     return jsonify({'outfits': output})
 
 #post user like
@@ -196,11 +211,22 @@ def edit():
     db.session.commit()
     return jsonify({'message': 'User updated successfully'})
 
-#let user add outfit without items
+#let user add outfit given an item
 @app.route('/outfit', methods=['POST'])
 def add_outfit():
     data = request.get_json()
-    new_outfit = Outfit(name=data['name'], user_id=data['user_id'])
+    if 'user_id' not in data or 'item_id' not in data:
+        return jsonify({'message': 'Name or user id not provided'})
+    
+    item = Item.query.filter_by(id=data['item_id']).first()
+    if item is None: 
+        return jsonify({'message': 'Item not found'})
+    #if the item is a tshirt (1), or polo(2)or jacket(3) then it is a top else bottom
+    if item.garment_type_id == 1 or item.garment_type_id == 2 or item.garment_type_id == 3:
+        new_outfit = Outfit(name='Outfit' + str(data['user_id'])+ str(data['item_id']), user_id=data['user_id'], top_id=data['item_id'], bottom_id=None) 
+    else:
+        new_outfit = Outfit(name='Outfit' + str(data['user_id']) + str(data['item_id']), user_id=data['user_id'], top_id=data['item_id'], bottom_id=None)   
+
     db.session.add(new_outfit)
     db.session.commit()
     return jsonify({'message': 'Outfit added successfully'})
@@ -250,61 +276,77 @@ def get_user(user_id):
     user_data = {'id': user.id, 'email': user.email, 'first_name': user.first_name, 'weight': user.weight, 'height': user.height}
     return jsonify({'user': user_data})
 
+
+
 if __name__ == '__main__':
     with app.app_context():
-        # db.drop_all()
         db.create_all() 
-        #populate the db with some data
-        #create garment types
+
+
+    app.run(debug=True)
+
+   #populate the db with datafromthefolder
+        # Get the path to the folder containing the obj files
+        # obj_folder = '/home/mahdy/Desktop/virtual_tryon_app_main/Garment Meshes-20240429T133228Z-001/Garment Meshes'
+
+        # # Iterate over the files in the folder
+        # for filename in os.listdir(obj_folder):
+        #     if filename.endswith('.obj'):
+        #         # Read the obj file
+                
+                
+        #         obj_data=base64.b64encode(open(os.path.join(obj_folder, filename), 'rb').read())
+        #         # Process the obj data and create a new GarmentType object
+        #         garment_type = GarmentType(garment_type=filename[:-4], object_file=obj_data)
+                
+        #         # Add the garment type to the database
+        #         db.session.add(garment_type)
+
+        # Commit the changes to the database
+        #db.session.commit()
+        # # # #populate the db with some data
+        # # # #create garment types
         # garment1 = GarmentType(garment_type='top', object_file=b'')
         # garment2 = GarmentType(garment_type='bottom', object_file=b'')
         # db.session.add(garment1)
         # db.session.add(garment2)
         # db.session.commit()
 
-        # #create vendors
+        # # # #create vendors
         # vendor1 = Vendor(vendor_name='Zara', vendor_link='https://www.zara.com')
         # vendor2 = Vendor(vendor_name='H&M', vendor_link='https://www.hm.com')
         # db.session.add(vendor1)
         # db.session.add(vendor2)
         # db.session.commit()
 
-        # create an item with the image encoded not the path
-        #open the image file 
-        #image = open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/front5.jpeg', 'rb')
+        # # # create an item with the image encoded not the path
+        # #open the image file 
+        # image = open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/front5.jpeg', 'rb')
 
-        item1 = Item(item_name='Salma Shirt', description='A blue shirt', garment_type_id=1, 
-                     front_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/front5.jpeg', 'rb').read()),
-                       back_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/back5.jpeg', 'rb').read()), texture=b'', vendor_id=1)
-        item2 = Item(item_name='Salma Pants', description='Black pants', garment_type_id=2, 
-                     front_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/front19.jpeg', 'rb').read()),
-                      back_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/back19.jpeg', 'rb').read()), texture=b'', vendor_id=2)
-        db.session.add(item1)
-        db.session.add(item2)
-        db.session.commit()
+        # item1 = Item(item_name='Salma Shirt', description='A blue shirt', garment_type_id=1, 
+        #              front_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/front5.jpeg', 'rb').read()),
+        #                back_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/back5.jpeg', 'rb').read()), texture=b'', vendor_id=1)
+        # item2 = Item(item_name='Salma Pants', description='Black pants', garment_type_id=2, 
+        #              front_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/front19.jpeg', 'rb').read()),
+        #               back_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/back19.jpeg', 'rb').read()), texture=b'', vendor_id=2)
+        # db.session.add(item1)
+        # db.session.add(item2)
+        # db.session.commit()
 
-        #create users
+        # # #create users
         # user1 = User(email = 'email 1', password = 'password 1', first_name = 'first name 1', body_model=b'', weight=150, height=70)
         # user2 = User(email = 'email 2', password = 'password 2', first_name = 'first name 2', body_model=b'', weight=160, height=72)
         # db.session.add(user1)
         # db.session.add(user2)
         # db.session.commit()
 
-        # #create outfits
+        # # # #create outfits
         # outfit1 = Outfit(name='Outfit 1', user_id=1)
         # outfit2 = Outfit(name='Outfit 2', user_id=2)
         # db.session.add(outfit1)
         # db.session.add(outfit2)
 
-        # #add items to outfits
+        # # # #add items to outfits
         # outfit1.items.append(item1)
         # outfit2.items.append(item2)
         # db.session.commit()
-
-    
-
-
-
-
-
-    app.run(debug=True)

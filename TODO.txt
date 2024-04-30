@@ -1,22 +1,15 @@
-APIS
+TODO
 =====
-MICE [DONE]
-HMR [DONE]
-PERSONALISED RECCOMENDATION [DONE] (FOR (RECOMMENDED FOR YOU) SECTION IN HOME PAGE)
-SEARCH RECOMMENDATION [] (FOR GARMENTS SEARCH)
-OUTFIT COLLISON API []
+1. Move rating env on this PC []
+2. HOOD: Storing outfit in db if collision already generated, else, generate the collision []
+3. HOOD: Storing the pickle dump? []
+4. Script to run all servers user/models []
+5. Implement DB usage in model APIs (insertion and getting consistent under all apis)
+    - Model servers to utilise same db instance as main server
+    - MICE: retrieve gender from user table (modify table to have gender)
 
-USER APIS [DONE]
 
 DB
-====
-USERS TABLE 
-ITEMS TABLE 
-LIKES TABLE
-OUTFITS TABLE 
-GARMENT TYPE TABLE
-
-* IMAGE CAPTIONING MODEL IS OFFLINE, RESULTS WILL BE IMPORTED INTO DATABASE
-* FETCHING CLOSEST GARMENT FOR SEARCH WILL BE ONLINE, FETCH ALL ENTRIES FROM DATABASE TO USE CODE ON.
-* HMR API: USES PHONE CAMERA TO INPUT IMAGE INTO HMR MODEL THEN HMR OUTPUT IS INPUT INTO MICE THEN SAVED IN USER PROFILE
-* USER WILL ADD ITEMS INTO OUTFIT AND WHEN USER CLICKS ON VIEW OUTFIT, OUTFIT COLLISION MODEL IS THEN RUN ON THE ENTRIES IN THE OUTFIT TABLE
+===
+1. Add gender in user table
+2. Add item_link in item table

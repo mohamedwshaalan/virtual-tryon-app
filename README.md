@@ -35,3 +35,7 @@ docker-compose up -d --no-build
 ```
 docker system prune -a
 ```
+
+# Envs for servers
+- hmr/hood = conda activate ugh/hood
+- rest is with activate env

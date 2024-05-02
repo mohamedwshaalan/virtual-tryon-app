@@ -27,7 +27,7 @@ class User(db.Model):
     body_model = db.Column(db.LargeBinary)
     weight = db.Column(db.Integer)
     height = db.Column(db.Integer)
-    gender = db.Column(db.String(150))
+
 
     def __repr__(self):
         return f'<User {self.username}>'
@@ -38,7 +38,6 @@ class Item(db.Model):
     description = db.Column(db.Text)
     garment_type_id = db.Column(db.Integer, db.ForeignKey('garment_type.id'), nullable=False)
     garment = db.relationship('GarmentType', backref=db.backref('items', lazy=True))
-    item_link  = db.Column(db.String(255))
     front_image = db.Column(db.LargeBinary)
     back_image = db.Column(db.LargeBinary)
     texture = db.Column(db.LargeBinary)

@@ -1,10 +1,11 @@
 TODO
 =====
-1. Move rating env on this PC []
+1. Move rating env on white PC []
 2. HOOD: Storing outfit in db if collision already generated, else, generate the collision []
 3. HOOD: Storing the pickle dump? []
-4. Script to run all servers user/models []
-5. Implement DB usage in model APIs (insertion and getting consistent under all apis)
+4. HOOD: two objects file output into one object file using blender [] AMR
+5. Script to run all servers user/models [] SHAALAN
+6. Implement DB usage in model APIs (insertion and getting consistent under all apis) SHAALAN
     - Model servers to utilise same db instance as main server
     - MICE: retrieve gender from user table (modify table to have gender)
 

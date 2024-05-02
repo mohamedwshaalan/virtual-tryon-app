@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin, LoginManager, login_user, logout_user, current_user
 from sqlalchemy import text
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_bcrypt import Bcrypt
 import os
 import base64
-import os
 
 app = Flask(__name__)
 
@@ -12,13 +14,19 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+bcrypt = Bcrypt(app)
+
 
 outfit_item_association = db.Table('outfit_item_association',
     db.Column('outfit_id', db.Integer, db.ForeignKey('outfit.id'), primary_key=True),
     db.Column('item_id', db.Integer, db.ForeignKey('item.id'), primary_key=True)
 )
 
-class User(db.Model):
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(150), unique=True)
     password = db.Column(db.String(150))
@@ -265,6 +273,11 @@ def remove_item():
     elif item.garment_type_id == 2:
         outfit.bottom_id = None
     
+    # check if the outfit is empty
+    if outfit.top_id is None and outfit.bottom_id is None:
+        db.session.delete(outfit)
+        
+
     db.session.commit()
     return jsonify({'message': 'Item removed from outfit successfully'})
 
@@ -274,12 +287,61 @@ def get_user(user_id):
     user_data = {'id': user.id, 'email': user.email, 'first_name': user.first_name, 'weight': user.weight, 'height': user.height}
     return jsonify({'user': user_data})
 
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+#GET SIGNUP PAGE AND SIGNUP 
+@app.route('/signup', methods=['POST'])
+def signup():
+    if request.method=='POST':
+
+        data = request.get_json()
+        
+        existing_user = User.query.filter_by(email=data['email']).first()
+
+        if existing_user:
+            return jsonify({'message': 'Email address already exists.'})
+        hashed_password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
+    
+        
+        new_user = User(email=data['email'], password=hashed_password, first_name=data['first_name'], weight = data['weight'], height = data['height']) # Create a new user
+        db.session.add(new_user)
+        db.session.commit()
+        return jsonify({'message': 'User created successfully', 'user_id': new_user.id})
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        data = request.get_json()
+
+        user = User.query.filter_by(email=data['email']).first()
+        
+        if user:
+            # Check password
+            if bcrypt.check_password_hash(user.password, data['password']):
+                #login_user(user)
+                return jsonify({'message': 'Login successful', 'user_id': user.id})
+
+                return redirect(url_for('dashboard'))
+            else:
+                return jsonify({'message': 'Invalid email or password.'})
+
+                return redirect(url_for('login'))
+        
+    
+        return redirect(url_for('login'))
+    
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
 
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all() 
-
 
     app.run(debug=True)
 

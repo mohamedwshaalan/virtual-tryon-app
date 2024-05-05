@@ -1,6 +1,6 @@
 .venv/
 __pycache__/
-mainvenv/
+mainenv/
 hmrmodel/models/
 hmrmodel/deeplab_model/
 micemodel/micevenv/

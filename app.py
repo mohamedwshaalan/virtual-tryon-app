@@ -1,8 +1,11 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
+from flask_swagger_ui import get_swaggerui_blueprint
 import os 
 db = SQLAlchemy()
+
+
 
 outfit_item_association = db.Table('outfit_item_association',
     db.Column('outfit_id', db.Integer, db.ForeignKey('outfit.id'), primary_key=True),

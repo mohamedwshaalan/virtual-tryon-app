@@ -1,98 +1,42 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import UserMixin, LoginManager, login_user, logout_user, current_user
+from flask_login import LoginManager, login_user, logout_user, current_user
 from sqlalchemy import text
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_bcrypt import Bcrypt
 import os
 import base64
+import sys
 
-app = Flask(__name__)
-
-
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-db = SQLAlchemy(app)
-bcrypt = Bcrypt(app)
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 
 
-outfit_item_association = db.Table('outfit_item_association',
-    db.Column('outfit_id', db.Integer, db.ForeignKey('outfit.id'), primary_key=True),
-    db.Column('item_id', db.Integer, db.ForeignKey('item.id'), primary_key=True)
-)
+import app
+
+
+bcrypt = Bcrypt(app.main_app)
 
 login_manager = LoginManager()
-login_manager.init_app(app)
+login_manager.init_app(app.main_app)
 login_manager.login_view = 'login'
 
-class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(150), unique=True)
-    password = db.Column(db.String(150))
-    first_name = db.Column(db.String(150))
-    outfits = db.relationship('Outfit', backref='user', lazy='dynamic')
-    body_model = db.Column(db.LargeBinary)
-    weight = db.Column(db.Integer)
-    height = db.Column(db.Integer)
-
-
-    def __repr__(self):
-        return f'<User {self.username}>'
-
-class Item(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    item_name = db.Column(db.String(150), nullable=False)
-    description = db.Column(db.Text)
-    garment_type_id = db.Column(db.Integer, db.ForeignKey('garment_type.id'), nullable=False)
-    garment = db.relationship('GarmentType', backref=db.backref('items', lazy=True))
-    front_image = db.Column(db.LargeBinary)
-    back_image = db.Column(db.LargeBinary)
-    texture = db.Column(db.LargeBinary)
-    vendor_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
-    outfits = db.relationship('Outfit', secondary='outfit_item_association', backref='items', lazy='dynamic')
-
-class Likes(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    item_id = db.Column(db.Integer, db.ForeignKey('item.id'))
-
-class Vendor(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    vendor_name = db.Column(db.String(150), nullable=False)
-    vendor_link = db.Column(db.String(255))
-    
-class GarmentType(db.Model):
-    
-    id = db.Column(db.Integer, primary_key=True)
-    garment_type = db.Column(db.String(150), nullable=False)
-    object_file = db.Column(db.LargeBinary)
-
-class Outfit(db.Model):
-    id  = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(150), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    top_id = db.Column(db.Integer, db.ForeignKey('item.id'))
-    bottom_id = db.Column(db.Integer, db.ForeignKey('item.id'))
-
-
-@app.route('/')
+@app.main_app.route('/')
 def index():
     return "Hello, World!"
 
 #Get body of user
-@app.route('/body/<user_id>', methods=['GET'])
+@app.main_app.route('/body/<user_id>', methods=['GET'])
 def get_body(user_id): 
-    user = User.query.filter_by(id=user_id).first()
-    return jsonify({'body': base64.b64encode(user.body_model).decode('utf-8')})
+    
+    return jsonify({'body': base64.b64encode(app.main_app.User.body_model).decode('utf-8')})
 
 #Get certain item
-@app.route('/item/<item_id>', methods=['GET'])
+@app.main_app.route('/item/<item_id>', methods=['GET'])
 def get_item(item_id):
     #get items front and back images and texture and decode them using base 64 then return
-    item = Item.query.filter_by(id=item_id).first()
+    item = app.Item.query.filter_by(id=item_id).first()
     #get vendor of this item
-    vendor = Vendor.query.filter_by(id=item.vendor_id).first()
+    vendor = app.Vendor.query.filter_by(id=item.vendor_id).first()
     item_data = {
         'id': item.id, 
         'item_name': item.item_name, 
@@ -106,22 +50,22 @@ def get_item(item_id):
     return jsonify({'item': item_data})
     
 #Get all items
-@app.route('/item', methods=['GET'])
+@app.main_app.route('/item', methods=['GET'])
 def get_items():
     user_id = request.args.get('user_id')
     #print(user_id)
     if not user_id:
         return jsonify({'message': 'No user id provided'})
 
-    user = User.query.filter_by(id=user_id).first()    
+    user = app.User.query.filter_by(id=user_id).first()    
     if not user:
         return jsonify({'message': 'Invalid user id'})
 
-    items = Item.query.all()
+    items = app.main_app.Item.query.all()
     output = []
     for item in items:
-        vendor = Vendor.query.filter_by(id=item.vendor_id).first()
-        like = Likes.query.filter_by(user_id=user.id, item_id=item.id).first()
+        vendor = app.Vendor.query.filter_by(id=item.vendor_id).first()
+        like = app.Likes.query.filter_by(user_id=user.id, item_id=item.id).first()
         if like is not None:
             item_data = {
                 'id': item.id,
@@ -153,13 +97,13 @@ def get_items():
     return jsonify({'items': output})
 
 #Get likes for certain user
-@app.route('/like/<user_id>', methods=['GET'])
+@app.main_app.route('/like/<user_id>', methods=['GET'])
 def get_likes(user_id):
-    likes = Likes.query.filter_by(user_id=user_id)
+    likes = app.Likes.query.filter_by(user_id=user_id)
     output = []
     for like in likes:
-        item = Item.query.filter_by(id=like.item_id).first()
-        vendor = Vendor.query.filter_by(id=item.vendor_id).first()
+        item = app.Item.query.filter_by(id=like.item_id).first()
+        vendor = app.Vendor.query.filter_by(id=item.vendor_id).first()
         if item is not None:
             item_data = {
                 'id': item.id, 
@@ -176,9 +120,9 @@ def get_likes(user_id):
     return jsonify({'likes': output})
 
 #Get outfits for certain user
-@app.route('/outfit/<user_id>', methods=['GET'])
+@app.main_app.route('/outfit/<user_id>', methods=['GET'])
 def get_outfits(user_id):
-    outfits = Outfit.query.filter_by(user_id=user_id)
+    outfits = app.Outfit.query.filter_by(user_id=user_id)
     output = []
     for outfit in outfits:
         outfit_data = {'id': outfit.id, 'name': outfit.name, 'user_id': outfit.user_id, 'top_id': outfit.top_id, 'bottom_id': outfit.bottom_id}
@@ -187,87 +131,87 @@ def get_outfits(user_id):
     return jsonify({'outfits': output})
 
 #post user like
-@app.route('/like', methods=['POST'])
+@app.main_app.route('/like', methods=['POST'])
 def like():
     data = request.get_json()
-    like = Likes.query.filter_by(user_id=data['user_id'], item_id=data['item_id']).first()
+    like = app.Likes.query.filter_by(user_id=data['user_id'], item_id=data['item_id']).first()
     if like is not None:
         return jsonify({'message': 'User already liked this item'})
-    new_like = Likes(user_id=data['user_id'], item_id=data['item_id'])
-    db.session.add(new_like)
-    db.session.commit()
+    new_like = app.Likes(user_id=data['user_id'], item_id=data['item_id'])
+    app.db.session.add(new_like)
+    app.db.session.commit()
     return jsonify({'message': 'New like created'})
 
 #remove like from user
-@app.route('/unlike', methods=['POST'])
+@app.main_app.route('/unlike', methods=['POST'])
 def unlike():
     data = request.get_json()
-    like = Likes.query.filter_by(user_id=data['user_id'], item_id=data['item_id']).first()
-    db.session.delete(like)
-    db.session.commit()
+    like = app.Likes.query.filter_by(user_id=data['user_id'], item_id=data['item_id']).first()
+    app.main_app.db.session.delete(like)
+    app.main_app.db.session.commit()
     return jsonify({'message': 'Like removed successfully'})
 
 #let user update their info
-@app.route('/edit', methods=['POST'])
+@app.main_app.route('/edit', methods=['POST'])
 def edit():
     data = request.get_json()
-    user = User.query.filter_by(id=data['user_id']).first()
+    user = app.User.query.filter_by(id=data['user_id']).first()
     user.weight = data['weight']
     user.height = data['height']
-    db.session.commit()
+    app.db.session.commit()
     return jsonify({'message': 'User updated successfully'})
 
 #let user add outfit given an item
-@app.route('/outfit', methods=['POST'])
+@app.main_app.route('/outfit', methods=['POST'])
 def add_outfit():
     data = request.get_json()
     if 'user_id' not in data or 'item_id' not in data:
         return jsonify({'message': 'Name or user id not provided'})
     
-    item = Item.query.filter_by(id=data['item_id']).first()
+    item = app.Item.query.filter_by(id=data['item_id']).first()
     if item is None: 
         return jsonify({'message': 'Item not found'})
     #if the item is a tshirt (1), or polo(2)or jacket(3) then it is a top else bottom
     if item.garment_type_id == 1 or item.garment_type_id == 2 or item.garment_type_id == 3:
-        new_outfit = Outfit(name='Outfit' + str(data['user_id'])+ str(data['item_id']), user_id=data['user_id'], top_id=data['item_id'], bottom_id=None) 
+        new_outfit = app.Outfit(name='Outfit' + str(data['user_id'])+ str(data['item_id']), user_id=data['user_id'], top_id=data['item_id'], bottom_id=None) 
     else:
-        new_outfit = Outfit(name='Outfit' + str(data['user_id']) + str(data['item_id']), user_id=data['user_id'], top_id=data['item_id'], bottom_id=None)   
+        new_outfit = app.Outfit(name='Outfit' + str(data['user_id']) + str(data['item_id']), user_id=data['user_id'], top_id=data['item_id'], bottom_id=None)   
 
-    db.session.add(new_outfit)
-    db.session.commit()
+    app.main_app.db.session.add(new_outfit)
+    app.main_app.db.session.commit()
     return jsonify({'message': 'Outfit added successfully'})
 
 #let certain user add item to outfit
-@app.route('/item', methods=['POST'])
+@app.main_app.route('/item', methods=['POST'])
 def add_item():
     data = request.get_json()
-    user = User.query.filter_by(id=data['user_id']).first()
+    user = app.User.query.filter_by(id=data['user_id']).first()
     #check if user_id and outfit_id are sent in request
     if 'user_id' not in data or 'outfit_id' not in data:
         return jsonify({'message': 'User id or outfit id not provided'})
-    outfit = Outfit.query.filter_by(id=data['outfit_id']).first()
+    outfit = app.Outfit.query.filter_by(id=data['outfit_id']).first()
     if outfit.user_id != user.id:
         return jsonify({'message': 'User does not have permission to add item to outfit'})
 
-    item = Item.query.filter_by(id=data['item_id']).first()
+    item = app.Item.query.filter_by(id=data['item_id']).first()
     if item.garment_type_id == 1:
         outfit.top_id = item.id
     elif item.garment_type_id == 2:
         outfit.bottom_id = item.id
     
-    db.session.commit()
+    app.main_app.db.session.commit()
     return jsonify({'message': 'Item added to outfit successfully'})
 
 #let user remove item from outfit
-@app.route('/item', methods=['DELETE'])
+@app.main_app.route('/item', methods=['DELETE'])
 def remove_item():
     data = request.get_json()
-    user = User.query.filter_by(id=data['user_id']).first()
-    outfit = Outfit.query.filter_by(id=data['outfit_id']).first()
+    user = app.User.query.filter_by(id=data['user_id']).first()
+    outfit = app.Outfit.query.filter_by(id=data['outfit_id']).first()
     if outfit.user_id != user.id:
         return jsonify({'message': 'User does not have permission to remove item from outfit'})
 
-    item = Item.query.filter_by(id=data['item_id']).first()
+    item = app.Item.query.filter_by(id=data['item_id']).first()
     if item.garment_type_id == 1:
         outfit.top_id = None
     elif item.garment_type_id == 2:
@@ -275,47 +219,47 @@ def remove_item():
     
     # check if the outfit is empty
     if outfit.top_id is None and outfit.bottom_id is None:
-        db.session.delete(outfit)
+        app.main_app.db.session.delete(outfit)
         
 
-    db.session.commit()
+    app.main_app.db.session.commit()
     return jsonify({'message': 'Item removed from outfit successfully'})
 
-@app.route('/user/<user_id>', methods=['GET'])
+@app.main_app.route('/user/<user_id>', methods=['GET'])
 def get_user(user_id):
-    user = User.query.filter_by(id=user_id).first()
+    user = app.User.query.filter_by(id=user_id).first()
     user_data = {'id': user.id, 'email': user.email, 'first_name': user.first_name, 'weight': user.weight, 'height': user.height}
     return jsonify({'user': user_data})
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return app.User.query.get(int(user_id))
 
 #GET SIGNUP PAGE AND SIGNUP 
-@app.route('/signup', methods=['POST'])
+@app.main_app.route('/signup', methods=['POST'])
 def signup():
     if request.method=='POST':
 
         data = request.get_json()
         
-        existing_user = User.query.filter_by(email=data['email']).first()
+        existing_user = app.User.query.filter_by(email=data['email']).first()
 
         if existing_user:
             return jsonify({'message': 'Email address already exists.'})
         hashed_password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
     
         
-        new_user = User(email=data['email'], password=hashed_password, first_name=data['first_name'], weight = data['weight'], height = data['height']) # Create a new user
-        db.session.add(new_user)
-        db.session.commit()
+        new_user = app.User(email=data['email'], password=hashed_password, first_name=data['first_name'], weight = data['weight'], height = data['height']) # Create a new user
+        app.main_app.db.session.add(new_user)
+        app.main_app.db.session.commit()
         return jsonify({'message': 'User created successfully', 'user_id': new_user.id})
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.main_app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         data = request.get_json()
 
-        user = User.query.filter_by(email=data['email']).first()
+        user = app.User.query.filter_by(email=data['email']).first()
         
         if user:
             # Check password
@@ -323,27 +267,26 @@ def login():
                 #login_user(user)
                 return jsonify({'message': 'Login successful', 'user_id': user.id})
 
-                return redirect(url_for('dashboard'))
+    
             else:
                 return jsonify({'message': 'Invalid email or password.'})
 
-                return redirect(url_for('login'))
         
     
         return redirect(url_for('login'))
     
 
-@app.route('/logout')
+@app.main_app.route('/logout')
 def logout():
     logout_user()
     return redirect(url_for('login'))
 
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all() 
+    with app.main_app.app_context():
+        app.db.create_all() 
 
-    app.run(debug=True)
+    app.main_app.run(debug=True)
 
    #populate the db with datafromthefolder
         # Get the path to the folder containing the obj files

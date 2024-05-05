@@ -24,7 +24,6 @@ with main.app.app_context():
         reader = csv.reader(file)
         next(reader)  
         for row in reader:
-            counter+= 1
             item_name, description, front_image_name, back_image_name, vendor_name, link, garment_type = row
             link = link.replace('\n', '')
             garment_type_id = garment_type_mapping.get(garment_type, 0)

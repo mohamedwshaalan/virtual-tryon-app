@@ -38,7 +38,7 @@ PART = [(0.0, np.float64(0.66666700000000001), 1.0),
   (0.0, np.float64(0.32941199999999998), 0.0)]
 
 # save obj file
-def return_obj(filename, v, f):
+def save_obj(filename, v, f):
   file = open(filename, 'w')
   for i in range(0, v.shape[0]):
     file.write('v %f %f %f\n'%(v[i][0], v[i][1], v[i][2]))

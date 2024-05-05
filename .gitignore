@@ -6,9 +6,10 @@ hmrmodel/deeplab_model/
 micemodel/micevenv/
 micemodel/release_model/
 hmrmodel/hmrvenv/
-salmarecommendationmodel/salmarecvenv
-salmarecommendationmodel/fashion-dataset/
-salmarecommendationmodel/df_embeddings.csv
-salmarecommendationmodel/zara-dataset/
+comprecmodel/salmarecvenv
+comprecmodel/fashion-dataset/
+comprecmodel/df_embeddings.csv
+comprecmodel/zara-dataset/
+instance/
 *.tar.gz
 

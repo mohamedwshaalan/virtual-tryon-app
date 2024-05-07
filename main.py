@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, current_user
 from sqlalchemy import text
@@ -24,8 +24,9 @@ def index():
 #GET BODY OF USER
 @app.main_app.route('/body/<user_id>', methods=['GET'])
 def get_body(user_id): 
-    
-    return jsonify({'body': base64.b64encode(app.main_app.User.body_model).decode('utf-8')})
+
+    user = app.User.query.filter_by(id=user_id).first()
+    return jsonify({'body': user.body_model.decode('utf-8')})
 
 #GET ITEM
 @app.main_app.route('/item/<item_id>', methods=['GET'])
@@ -59,7 +60,7 @@ def get_items():
     if not user:
         return jsonify({'message': 'Invalid user id'})
 
-    items = app.main_app.Item.query.all()
+    items = app.Item.query.all()
     output = []
     for item in items:
         vendor = app.Vendor.query.filter_by(id=item.vendor_id).first()
@@ -145,8 +146,8 @@ def like():
 def unlike():
     data = request.get_json()
     like = app.Likes.query.filter_by(user_id=data['user_id'], item_id=data['item_id']).first()
-    app.main_app.db.session.delete(like)
-    app.main_app.db.session.commit()
+    app.db.session.delete(like)
+    app.db.session.commit()
     return jsonify({'message': 'Like removed successfully'})
 
 #UPDATE USER INFO
@@ -173,10 +174,10 @@ def add_outfit():
     if item.garment_type_id == 1 or item.garment_type_id == 2 or item.garment_type_id == 3:
         new_outfit = app.Outfit(name='Outfit' + str(data['user_id'])+ str(data['item_id']), user_id=data['user_id'], top_id=data['item_id'], bottom_id=None) 
     else:
-        new_outfit = app.Outfit(name='Outfit' + str(data['user_id']) + str(data['item_id']), user_id=data['user_id'], top_id=data['item_id'], bottom_id=None)   
+        new_outfit = app.Outfit(name='Outfit' + str(data['user_id']) + str(data['item_id']), user_id=data['user_id'], top_id=None, bottom_id=data['item_id'])   
 
-    app.main_app.db.session.add(new_outfit)
-    app.main_app.db.session.commit()
+    app.db.session.add(new_outfit)
+    app.db.session.commit()
     return jsonify({'message': 'Outfit added successfully'})
 
 #POST ITEM TO OUTFIT FOR USER
@@ -191,12 +192,12 @@ def add_item():
         return jsonify({'message': 'User does not have permission to add item to outfit'})
 
     item = app.Item.query.filter_by(id=data['item_id']).first()
-    if item.garment_type_id == 1:
+    if item.garment_type_id == 1 or item.garment_type_id == 2 or item.garment_type_id == 3:
         outfit.top_id = item.id
-    elif item.garment_type_id == 2:
+    elif item.garment_type_id == 4 or item.garment_type_id == 5:
         outfit.bottom_id = item.id
     
-    app.main_app.db.session.commit()
+    app.db.session.commit()
     return jsonify({'message': 'Item added to outfit successfully'})
 
 #DELETE ITEM FROM OUTFIT FOR USER
@@ -209,16 +210,16 @@ def remove_item():
         return jsonify({'message': 'User does not have permission to remove item from outfit'})
 
     item = app.Item.query.filter_by(id=data['item_id']).first()
-    if item.garment_type_id == 1:
+    if item.garment_type_id == 1 or item.garment_type_id == 2 or item.garment_type_id == 3:
         outfit.top_id = None
-    elif item.garment_type_id == 2:
+    elif item.garment_type_id == 4 or item.garment_type_id == 5:
         outfit.bottom_id = None
     
     if outfit.top_id is None and outfit.bottom_id is None:
-        app.main_app.db.session.delete(outfit)
+        app.db.session.delete(outfit)
         
 
-    app.main_app.db.session.commit()
+    app.db.session.commit()
     return jsonify({'message': 'Item removed from outfit successfully'})
 
 #GET USER
@@ -246,9 +247,9 @@ def signup():
         hashed_password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
     
         
-        new_user = app.User(email=data['email'], password=hashed_password, first_name=data['first_name'], weight = data['weight'], height = data['height']) # Create a new user
-        app.main_app.db.session.add(new_user)
-        app.main_app.db.session.commit()
+        new_user = app.User(email=data['email'], password=hashed_password, first_name=data['first_name'], weight = data['weight'], height = data['height'], gender=data['gender']) # Create a new user
+        app.db.session.add(new_user)
+        app.db.session.commit()
         return jsonify({'message': 'User created successfully', 'user_id': new_user.id})
 
 #LOGIN
@@ -281,6 +282,60 @@ def logout():
 if __name__ == '__main__':
     with app.main_app.app_context():
         app.db.create_all() 
+
+        garment1 = app.GarmentType(garment_type='top', 
+                                   object_file=base64.b64encode(open('/home/mahdy/Desktop/resized_garments/T-shirt/medium_tall.obj', 'rb').read()))
+        garment2 = app.GarmentType(garment_type='bottom',
+                                    object_file=base64.b64encode(open('/home/mahdy/Desktop/resized_garments/Pants/Medium_Tall.obj', 'rb').read()))
+            
+        app.db.session.add(garment1)
+        app.db.session.add(garment2)
+        app.db.session.commit()
+
+        # garment1 = app.GarmentType(garment_type='top', object_file=b'')
+        # garment2 = app.GarmentType(garment_type='bottom', object_file=b'')
+        # app.db.session.add(garment1)
+        # app.db.session.add(garment2)
+        # app.db.session.commit()
+
+        # # # #create vendors
+        # vendor1 = app.Vendor(vendor_name='Zara', vendor_link='https://www.zara.com')
+        # vendor2 = app.Vendor(vendor_name='H&M', vendor_link='https://www.hm.com')
+        # app.db.session.add(vendor1)
+        # app.db.session.add(vendor2)
+        # app.db.session.commit()
+
+        # # # create an item with the image encoded not the path
+        # #open the image file 
+        # image = open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/front5.jpeg', 'rb')
+
+        # item1 = app.Item(item_name='Salma Shirt', description='A blue shirt', garment_type_id=1, 
+        #             front_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/front5.jpeg', 'rb').read()),
+        #             back_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/back5.jpeg', 'rb').read()), texture=b'', vendor_id=1)
+        # item2 = app.Item(item_name='Salma Pants', description='Black pants', garment_type_id=2, 
+        #             front_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/front19.jpeg', 'rb').read()),
+        #             back_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/back19.jpeg', 'rb').read()), texture=b'', vendor_id=2)
+        # app.db.session.add(item1)
+        # app.db.session.add(item2)
+        # app.db.session.commit()
+
+        # # #create users
+        # user1 = app.User(email = 'email 1', password = 'password 1', first_name = 'first name 1', body_model=b'', weight=150, height=70)
+        # user2 = app.User(email = 'email 2', password = 'password 2', first_name = 'first name 2', body_model=b'', weight=160, height=72)
+        # app.db.session.add(user1)
+        # app.db.session.add(user2)
+        # app.db.session.commit()
+
+        # # # #create outfits
+        # outfit1 = app.Outfit(name='Outfit 1', user_id=1)
+        # outfit2 = app.Outfit(name='Outfit 2', user_id=2)
+        # app.db.session.add(outfit1)
+        # app.db.session.add(outfit2)
+
+        # # # #add items to outfits
+        # outfit1.items.append(item1)
+        # outfit2.items.append(item2)
+        # app.db.session.commit()
 
     app.main_app.run(debug=True)
 

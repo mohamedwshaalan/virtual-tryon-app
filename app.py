@@ -1,7 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
-from flask_swagger_ui import get_swaggerui_blueprint
 import os 
 db = SQLAlchemy()
 
@@ -84,6 +83,11 @@ comprec_app = Flask(__name__, instance_relative_config=False)
 comprec_app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 comprec_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(comprec_app)
+
+hood_app = Flask(__name__, instance_relative_config=False)
+hood_app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../database.db'
+hood_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db.init_app(hood_app)
 
 
 test_value = "shaalan"

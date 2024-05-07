@@ -33,13 +33,15 @@ def generate_object_file():
 
     model.generate_object_file(weight, height, hips, chest,waist ,gender)
     
-    body_model = open("dump/body_model.obj", 'rb')
+    #body_model = open("dump/body_model.obj", 'rb')
 
-    body_model = base64.b64encode(body_model.read()).decode('utf-8')
 
-    user.body_model = body_model
+    user.body_model = base64.b64encode(open('dump/body_model.obj', 'rb').read())
 
-    os.remove("dump/body_model.obj")
+    app.db.session.commit()
+
+
+    # os.remove("dump/body_model.obj")
 
     return jsonify({'message': 'Body model generated successfully'})
 

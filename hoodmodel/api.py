@@ -1,6 +1,6 @@
 import os
 
-HOOD_PROJECT = "/home/mahdy/Desktop/virtual_tryon_app_main/hoodmodel"
+HOOD_PROJECT = "/home/mahdy/Desktop/Backup/Application/virtual-tryon-app/hoodmodel"
 HOOD_DATA = "/home/mahdy/Desktop/HOOD_Model/hood_data/"
 
 os.environ["HOOD_PROJECT"] = HOOD_PROJECT
@@ -15,6 +15,7 @@ from utils.arguments import load_params, create_modules
 from utils.arguments import load_params
 from utils.common import move2device, pickle_dump
 from utils.defaults import DEFAULTS
+from utils.mergeObjects import merge_objects
 from pathlib import Path
 import torch
 
@@ -29,7 +30,13 @@ from utils.mesh_creation import add_coarse_edges
 import base64
 import numpy as np
 import trimesh
+import sys
+import yaml
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
+
+import app
+print(os.getcwd())
 def parse_obj(file, tex_coords=False):
     """
     Load a mesh from an obj file
@@ -85,6 +92,7 @@ def obj2template2(file):
 
 #obj_path = Path(DEFAULTS.data_root) / 'fromanypose' / 'polo_aligned.obj'
 #out_template_path = Path(DEFAULTS.data_root) / 'fromanypose' / 'polo_aligned.pkl'
+#waaait, just gime 5 mins
 
 #template_dict = obj2template(obj_path)
 #pickle_dump(template_dict, out_template_path)
@@ -97,19 +105,7 @@ checkpoint_path = '/home/mahdy/Desktop/HOOD_Model/hood_data/trained_models/postc
 state_dict =  torch.load(checkpoint_path)
 runner.load_state_dict(state_dict['training_module'])
 
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-db = SQLAlchemy(app)
-#select obj from user where email=
-class GarmentType(db.Model):
-    
-    id = db.Column(db.Integer, primary_key=True)
-    garment_type = db.Column(db.String(150), nullable=False)
-    object_file = db.Column(db.LargeBinary)
-    
-@app.route('/api/hood/<outfit_id>', methods=['GET'])
+@app.hood_app.route('/api/hood/<outfit_id>', methods=['GET'])
 def run_hood(outfit_id):
     # outfit=Outfit.query.filter_by(id=outfit_id).first()
     # top_item=Item.query.filter_by(id=outfit.top_id).first()
@@ -117,16 +113,39 @@ def run_hood(outfit_id):
     # user_id=outfit.user_id
     #current_user=User.query.filter_by(id=2).first()
     # top_garment_type_id=top_item.garment_type_id
-    obj_file=GarmentType.query.filter_by(id=outfit_id).first().object_file
+
+    # outfit = app.Outfit.query.filter_by(id=outfit_id).first()
+
+    # top = app.Item.query.filter_by(id=outfit.top_id).first()
+    # bottom = app.Item.query.filter_by(id=outfit.bottom_id).first()
+
+
+    obj_file= app.GarmentType.query.filter_by(id=outfit_id).first().object_file
     #print(obj_file)
     decoded_obj_file = base64.b64decode(obj_file)
     #print(decoded_obj_file)
     decoded_obj_file_str = decoded_obj_file.decode('utf-8')
     #print(decoded_obj_file_str)
+    #print(decoded_obj_file_str)
     # 
-    out_template_path = Path(DEFAULTS.data_root) / 'fromanypose' / 'polo_aligned.pkl'
+
+    
+    
+    
     template_dict = obj2template2(decoded_obj_file_str)
+    print(template_dict.keys())
+    yaml_path=os.path.join(os.getcwd(),'configs/aux','from_any_pose.yaml')
+    print(yaml_path)
+    out_template_path = Path(DEFAULTS.data_root) / 'fromanypose' / 'current_garment.pkl'
     pickle_dump(template_dict, out_template_path)
+
+    with open(yaml_path, 'r') as file:
+        data = yaml.safe_load(file)
+
+    print(data)
+    
+
+
     
     #user_body=current_user.body_model
 
@@ -142,6 +161,7 @@ def run_hood(outfit_id):
     
 
     sample = next(iter(dataloader))
+    #print(template_dict)
     #print(sample)
     trajectories_dict = runner.valid_rollout(sample)
     out_path = Path(DEFAULTS.data_root) / 'temp' / 'our_results' / 'polo_fitting.pkl'
@@ -152,5 +172,8 @@ def run_hood(outfit_id):
     write_video(out_path, out_video, renderer)
     return jsonify({'message': 'HOOD API executed successfully'})
 
-if __name__ == '__main__':
-    app.run()
+
+if __name__ == "__main__":
+    with app.hood_app.app_context():
+        app.db.create_all()
+    app.hood_app.run(host='localhost', port=5004, debug=True)

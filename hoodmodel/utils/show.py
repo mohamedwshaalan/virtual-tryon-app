@@ -131,7 +131,8 @@ def write_video(sequence_path: str, video_path: str, renderer: HeadlessRenderer,
     camera = PinholeCamera(positions, targets, renderer.window_size[0], renderer.window_size[1], viewer=renderer)
     renderer.scene.nodes = renderer.scene.nodes[:5]
     renderer.playback_fps = fps
-    output_dir = "/home/mahdy/Desktop/automatic_export2"
+    output_dir = "/home/mahdy/Desktop/automatic_export_NEWest"
+    os.makedirs(output_dir, exist_ok=True)
     for frame_idx, obj in enumerate(objects):
         print(obj.vertices.shape)
         print(obj.faces.shape)

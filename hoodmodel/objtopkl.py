@@ -108,5 +108,5 @@ def objtopkl_all():
     for obj in app.GarmentType.query.all():
         objtopkl(obj.object_file)
 
-##AGAIN IT IS NOT TESTED UNTIL NOW AS SHAALAN HASEN'T FINISHED THE COLUMN IN THE DATABASE (HE IS SO LAZY) 
+##AGAIN IT IS NOT TESTED UNTIL NOW
 ##BUT IT SHOULD WORK FINE

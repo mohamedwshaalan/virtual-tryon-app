@@ -18,31 +18,31 @@ def index():
 def generate_object_file():
    
     data = request.get_json()
+    if 'user_id' not in data:
+        return jsonify({'message': 'User id is required'})
+    
 
     user = app.User.query.filter_by(id=data['user_id']).first()
 
     if not user:
         return jsonify({'message': 'Invalid user id'})
-    weight = user.weight
-    height = user.height
-    gender = user.gender
 
+    weight = data['weight']
+    height = data['height']
     hips = data['hips']
     chest = data['chest']
     waist = data['waist']
+    gender = data['gender']
 
     model.generate_object_file(weight, height, hips, chest,waist ,gender)
-    
-    #body_model = open("dump/body_model.obj", 'rb')
-
 
     user.body_model = base64.b64encode(open('dump/body_model.obj', 'rb').read())
 
+    user.weight = weight
+    user.height = height
+    user.gender = gender
+
     app.db.session.commit()
-
-
-    # os.remove("dump/body_model.obj")
-
     return jsonify({'message': 'Body model generated successfully'})
 
 if __name__ == '__main__':

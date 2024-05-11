@@ -4,7 +4,7 @@ from flask_login import UserMixin
 import os 
 db = SQLAlchemy()
 
-
+#sanay
 
 outfit_item_association = db.Table('outfit_item_association',
     db.Column('outfit_id', db.Integer, db.ForeignKey('outfit.id'), primary_key=True),
@@ -38,6 +38,8 @@ class Item(db.Model):
     vendor_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
     outfits = db.relationship('Outfit', secondary='outfit_item_association', backref='items', lazy='dynamic')
     item_link = db.Column(db.String(255))
+    caption = db.Column(db.String(500))
+    file_name = db.Column(db.String(255))
 
 class Likes(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -80,7 +82,7 @@ hmr_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(hmr_app)
 
 comprec_app = Flask(__name__, instance_relative_config=False)
-comprec_app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+comprec_app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../database.db'
 comprec_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(comprec_app)
 
@@ -89,5 +91,14 @@ hood_app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../database.db'
 hood_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(hood_app)
 
+bpy_app = Flask(__name__, instance_relative_config=False)
+bpy_app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../database.db'
+bpy_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db.init_app(bpy_app)
+
+data_app = Flask(__name__, instance_relative_config=False)
+data_app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../database.db'
+data_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db.init_app(data_app)
 
 test_value = "shaalan"

@@ -430,10 +430,13 @@ class BareMeshBodyBuilder:
         """
         Add body vertices to the obstacle object in the sample
         """
-        print(f'HELLOOOOOOOO {sequence_dict["verts"].shape}')
-        sequence_dict["verts"] = np.expand_dims(sequence_dict["verts"], axis=0)        
-        print(f'HELLOOOOOOOO2 {sequence_dict["verts"].shape}')
-        pos = torch.FloatTensor(sequence_dict["verts"]).permute(1, 0, 2)
+        print(sequence_dict)
+        print(f'HELLOOOOOOOO {sequence_dict["vertices"].shape}')
+        sequence_dict["vertices"] = np.expand_dims(sequence_dict["vertices"], axis=0)        
+        print(f'HELLOOOOOOOO2 {sequence_dict["vertices"].shape}')
+        
+        pos = torch.FloatTensor(sequence_dict["vertices"]).permute(1, 0,2)
+        #, 2)
 
         sample['obstacle'].prev_pos = pos
         sample['obstacle'].pos = pos
@@ -565,6 +568,7 @@ class Dataset:
         """
 
         sample = self.loader.load_sample(self.pose_sequence_path)
+
         sample['sequence_name'] = self.pose_sequence_path
         sample['garment_name'] = 'stub'
 

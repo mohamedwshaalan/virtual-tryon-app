@@ -4,10 +4,12 @@ from flask_login import LoginManager, login_user, logout_user, current_user
 from sqlalchemy import text
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_bcrypt import Bcrypt
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 import os
 import base64
 import sys
-
+import pandas as pd
 import app
 
 
@@ -157,6 +159,8 @@ def edit():
     user = app.User.query.filter_by(id=data['user_id']).first()
     user.weight = data['weight']
     user.height = data['height']
+    user.gender = data['gender']
+    
     app.db.session.commit()
     return jsonify({'message': 'User updated successfully'})
 
@@ -272,25 +276,70 @@ def login():
     
         return redirect(url_for('login'))
     
-
+#LOGOUT
 @app.main_app.route('/logout')
 def logout():
     logout_user()
     return redirect(url_for('login'))
+
+#SEARCH FOR SIMILAR ITEMS
+@app.data_app.route('/search', methods=['GET'])
+def search():
+    data = request.get_json()
+    search_query = data.get('query')
+    if not search_query:
+        return jsonify({'message': 'No search query provided'})
+
+    items = app.Item.query.all()
+    item_ids = []
+    item_captions = []
+    for item in items:
+        item_ids.append(item.id)
+        item_captions.append(item.caption)
+    df = pd.DataFrame({'item_id': item_ids, 'item_caption': item_captions})
+    vectorizer = TfidfVectorizer()
+    tfidf_matrix = vectorizer.fit_transform(df['item_caption'])
+    target_tfidf = vectorizer.transform([search_query])
+    similarities = cosine_similarity(target_tfidf, tfidf_matrix)
+
+    num_similarities = 5
+    top_indices = similarities.argsort()[0, :-num_similarities-1:-1]
+
+    top_similarities = df.iloc[top_indices]
+
+    top_ids = top_similarities['item_id'].tolist()
+
+    output = []
+    for item_id in top_ids:
+        item = app.Item.query.filter_by(id=item_id).first()
+        vendor = app.Vendor.query.filter_by(id=item.vendor_id).first()
+        item_data = {
+            'id': item.id, 
+            'item_name': item.item_name, 
+            'description': item.description, 
+            'front_image': item.front_image.decode('utf-8'), 
+            'back_image': item.back_image.decode('utf-8'), 
+            'texture': item.texture.decode('utf-8'), 
+            'vendor': vendor.vendor_name, 
+            'vendor_link': vendor.vendor_link
+        }
+        output.append(item_data)
+    return jsonify({'items': output})
+    
 
 
 if __name__ == '__main__':
     with app.main_app.app_context():
         app.db.create_all() 
 
-        garment1 = app.GarmentType(garment_type='top', 
-                                   object_file=base64.b64encode(open('/home/mahdy/Desktop/resized_garments/T-shirt/medium_tall.obj', 'rb').read()))
-        garment2 = app.GarmentType(garment_type='bottom',
-                                    object_file=base64.b64encode(open('/home/mahdy/Desktop/resized_garments/Pants/Medium_Tall.obj', 'rb').read()))
+        # garment1 = app.GarmentType(garment_type='top', 
+        #                            object_file=base64.b64encode(open('/home/mahdy/Desktop/resized_garments/T-shirt/medium_tall.obj', 'rb').read()))
+        # garment2 = app.GarmentType(garment_type='bottom',
+        #                             object_file=base64.b64encode(open('/home/mahdy/Desktop/resized_garments/Pants/Medium_Tall.obj', 'rb').read()))
             
-        app.db.session.add(garment1)
-        app.db.session.add(garment2)
-        app.db.session.commit()
+        # app.db.session.add(garment1)
+        # app.db.session.add(garment2)
+        # app.db.session.commit()
 
         # garment1 = app.GarmentType(garment_type='top', object_file=b'')
         # garment2 = app.GarmentType(garment_type='bottom', object_file=b'')

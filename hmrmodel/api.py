@@ -58,9 +58,9 @@ def generate_object_file():
     user = app.User.query.filter_by(id=user_id).first()
     print("here")
   #print all entries in the database
-    for user in app.User.query.all():
-        print(user.id)
-        print("-----------------")
+    # for user in app.User.query.all():
+    #     print(user.id)
+    #     print("-----------------")
 
     if not user:
         return jsonify({'message': 'Invalid user id'})
@@ -69,7 +69,11 @@ def generate_object_file():
     height = user.height
     gender = user.gender
 
-    image_file = request.form.get('image')
+    #get image_file from request and save it to dump model  
+
+    image_file = request.files['image_file']
+    image_file.save('dump/image.jpg')
+
     measurements = model.get_dimensions(height, image_file)
     measurement_labels = ["height", "waist", "belly", "chest", "wrist", "neck", "arm length", "thigh", "shoulder width", "hips", "ankle", "weight", "gender"]
     formatted_measurements = {}
@@ -78,6 +82,8 @@ def generate_object_file():
 
     for label, value in zip(measurement_labels, measurements.tolist()):
         formatted_measurements[label] = value[0]
+
+    formatted_measurements["user_id"] = user_id
     
     requests.post('http://localhost:5001/generate', json=formatted_measurements)
 

@@ -28,3 +28,4 @@ SERVERS/PORTS ([db] = uses db)
 5003: Rating
 5004: HOOD [db]
 5005: Compatibility Recommendation [db]
+5006: bpy server 

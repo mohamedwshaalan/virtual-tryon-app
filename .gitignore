@@ -7,9 +7,11 @@ micemodel/micevenv/
 micemodel/release_model/
 hmrmodel/hmrvenv/
 comprecmodel/salmarecvenv
+comprecmodel/comprecenv
 comprecmodel/fashion-dataset/
 comprecmodel/df_embeddings.csv
 comprecmodel/zara-dataset/
 instance/
+data/
 *.tar.gz
 

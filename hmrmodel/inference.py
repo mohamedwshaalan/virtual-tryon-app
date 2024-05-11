@@ -158,7 +158,7 @@ class DeepLabModel(object):
 		print('model loaded successfully!')
 
 
-		image = Image.open("/home/mahdy/Desktop/Backup/Application/virtual-tryon-app/hmrmodel/person.jpg")
+		image = Image.open("/home/mahdy/Desktop/Backup/Application/virtual-tryon-app/hmrmodel/dump/image.jpg")
 
 		back = cv2.imread('sample_data/input/background.jpeg',cv2.IMREAD_COLOR)
 

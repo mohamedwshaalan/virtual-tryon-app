@@ -131,7 +131,7 @@ def write_video(sequence_path: str, video_path: str, renderer: HeadlessRenderer,
     camera = PinholeCamera(positions, targets, renderer.window_size[0], renderer.window_size[1], viewer=renderer)
     renderer.scene.nodes = renderer.scene.nodes[:5]
     renderer.playback_fps = fps
-    output_dir = "/home/mahdy/Desktop/automatic_export_NEWest"
+    output_dir = "/home/mahdy/Desktop/Backup/Application/virtual-tryon-app/hoodmodel"
     os.makedirs(output_dir, exist_ok=True)
     for frame_idx, obj in enumerate(objects):
         print(obj.vertices.shape)
@@ -145,12 +145,13 @@ def write_video(sequence_path: str, video_path: str, renderer: HeadlessRenderer,
         # trimesh_obj = trimesh.Trimesh(vertices=obj.vertices, faces=obj.faces)
         # trimesh_obj.export(obj_file_path)
         renderer.scene.add(obj)
+        print(obj)
 
-    renderer.scene.add(camera)
-    renderer.set_temp_camera(camera)
-    # Save mesh as object file
-    obj_file_path = os.path.join(output_dir, f"frame_{frame_idx:05d}.obj")
-    renderer.run(video_dir=str(video_path))
+    # renderer.scene.add(camera)
+    # renderer.set_temp_camera(camera)
+    # # Save mesh as object file
+    # obj_file_path = os.path.join(output_dir, f"frame_{frame_idx:05d}.obj")
+    # renderer.run(video_dir=str(video_path))
     # v = Viewer()
     # for obj in objects:
     #     v.scene.add(obj)

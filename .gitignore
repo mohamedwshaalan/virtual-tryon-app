@@ -12,6 +12,7 @@ comprecmodel/fashion-dataset/
 comprecmodel/df_embeddings.csv
 comprecmodel/zara-dataset/
 instance/
+database.db
 data/
 *.tar.gz
 

@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, redirect, url_for
+from flask import Flask, request, jsonify, redirect, send_file, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, current_user
 from sqlalchemy import text
@@ -50,19 +50,18 @@ def get_item(item_id):
     }
     return jsonify({'item': item_data})
     
-#GET ALL ITEMS
 @app.main_app.route('/item', methods=['GET'])
 def get_items():
-    
     user_id = request.args.get('user_id')
     if not user_id:
         return jsonify({'message': 'No user id provided'})
 
-    user = app.User.query.filter_by(id=user_id).first()    
+    user = app.User.query.filter_by(id=user_id).first()
     if not user:
         return jsonify({'message': 'Invalid user id'})
 
-    items = app.Item.query.all()
+    items = app.Item.query.limit(200).all()
+
     output = []
     for item in items:
         vendor = app.Vendor.query.filter_by(id=item.vendor_id).first()
@@ -78,9 +77,9 @@ def get_items():
                 'vendor': vendor.vendor_name,
                 'vendor_link': vendor.vendor_link,
                 'liked': True,
-                'garment_type': 'top' if item.garment_type_id == 1 or item.garment_type_id  == 2 or item.garment_type_id == 3 else 'bottom'
+                'garment_type': 'top' if item.garment_type_id in (1, 3, 5) else 'bottom'
            }
-            
+
         else:
             item_data = {
                 'id': item.id,
@@ -92,7 +91,7 @@ def get_items():
                 'vendor': vendor.vendor_name,
                 'vendor_link': vendor.vendor_link,
                 'liked': False,
-                'garment_type': 'top' if item.garment_type_id == 1 or item.garment_type_id  == 2 or item.garment_type_id == 3 else 'bottom'
+                'garment_type': 'top' if item.garment_type_id in (1, 3, 5) else 'bottom'
             }
         output.append(item_data)
     return jsonify({'items': output})
@@ -175,7 +174,7 @@ def add_outfit():
     if item is None: 
         return jsonify({'message': 'Item not found'})
     #if the item is a tshirt (1), or polo(2) or jacket(3) then it is a top else bottom
-    if item.garment_type_id == 1 or item.garment_type_id == 2 or item.garment_type_id == 3:
+    if item.garment_type_id == 1 or item.garment_type_id == 3 or item.garment_type_id == 5:
         new_outfit = app.Outfit(name='Outfit' + str(data['user_id'])+ str(data['item_id']), user_id=data['user_id'], top_id=data['item_id'], bottom_id=None) 
     else:
         new_outfit = app.Outfit(name='Outfit' + str(data['user_id']) + str(data['item_id']), user_id=data['user_id'], top_id=None, bottom_id=data['item_id'])   
@@ -196,9 +195,9 @@ def add_item():
         return jsonify({'message': 'User does not have permission to add item to outfit'})
 
     item = app.Item.query.filter_by(id=data['item_id']).first()
-    if item.garment_type_id == 1 or item.garment_type_id == 2 or item.garment_type_id == 3:
+    if item.garment_type_id == 1 or item.garment_type_id == 3 or item.garment_type_id == 5:
         outfit.top_id = item.id
-    elif item.garment_type_id == 4 or item.garment_type_id == 5:
+    elif item.garment_type_id == 2 or item.garment_type_id == 4:
         outfit.bottom_id = item.id
     
     app.db.session.commit()
@@ -283,14 +282,22 @@ def logout():
     return redirect(url_for('login'))
 
 #SEARCH FOR SIMILAR ITEMS
-@app.data_app.route('/search', methods=['GET'])
+@app.main_app.route('/search', methods=['GET'])
 def search():
-    data = request.get_json()
-    search_query = data.get('query')
+
+    #search_query = request.args.get('query')
+    search_query = request.args.get('query')
+    #data = request.get_json()
+    #get from args
+
+
+    #search_query = data.get('query')
+
     if not search_query:
         return jsonify({'message': 'No search query provided'})
 
     items = app.Item.query.all()
+
     item_ids = []
     item_captions = []
     for item in items:
@@ -325,8 +332,12 @@ def search():
         }
         output.append(item_data)
     return jsonify({'items': output})
-    
 
+@app.main_app.route('/model')    
+def get_model():
+    # Replace 'path/to/your/model.glb' with the path to your GLB file
+    model_path = '/home/mahdy/Desktop/flutter_application_1/assets/test.glb'
+    return send_file(model_path, mimetype='model/gltf-binary')
 
 if __name__ == '__main__':
     with app.main_app.app_context():

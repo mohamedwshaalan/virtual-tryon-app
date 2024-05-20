@@ -19,23 +19,17 @@ Github Repository for Thesis Project
 > export FLASK_APP=app.py
 > flask run
 ```
-
-# Building Docker Compose
+# PORTS FOR SERVERS 
 ```
-docker-compose up --build
+> 5000: main (user) 
+> 5001: MICE  
+> 5002: HMR   
+> 5003: Rating 
+> 5004: HOOD 
+> 5005: Compatibility Recommendation
+> 5006: bpy server 
+> 5007: rating 
 ```
-
-# Running Docker Compose 
-```
-docker-compose pull
-docker-compose up -d --no-build
-```
-
-# Removing all images and containers
-```
-docker system prune -a
-```
-
 # Envs for servers
 - hmr/hood = conda activate ugh/hood
 - rest is with activate env

@@ -7,7 +7,7 @@ micemodel/micevenv/
 micemodel/release_model/
 ratingmodel/ratingenv
 hmrmodel/hmrvenv/
-hoodmodel/
+hoodmodel/hooddata
 comprecmodel/salmarecvenv
 comprecmodel/comprecenv
 comprecmodel/fashion-dataset/

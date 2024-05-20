@@ -1,0 +1,49 @@
+criterions:
+  postcvpr.collision_penalty:
+    eps: 2e-3
+    n_rampup_iterations: 100000
+    start_rampup_iteration: 50000
+    weight_max: 5e+5
+    weight_start: 5e+3
+  postcvpr.friction_energy:
+    friction_radius: 3e-3
+    mu: 0.5
+  postcvpr.gravitational_energy:
+    z_axis: 1
+  postcvpr.inertia: null
+  postcvpr.mataug.bending_energy: null
+  postcvpr.mataug.stretching_energy: null
+dataloader:
+  batch_size: 1
+  dataset:
+    from_any_pose:
+      garment_template_path: fromanypose/new_current_garment.pkl
+      n_coarse_levels: 3
+      pose_sequence_path: fromanypose/new_current_body.pkl
+      pose_sequence_type: mesh
+      smpl_model: smpl/SMPL_FEMALE.pkl
+  garment_template_path: current_garment.pkl
+  num_workers: 0
+  pose_sequence_path: current_body.pkl
+  pyg_data: true
+device: cpu
+experiment:
+  name: debug
+model:
+  postcvpr:
+    architecture: f,c0|f,c0|f,c0|d:c0,c1|c0,c1|c0,c1|d:c1|c1|c1|u:c0,c1|c0,c1|c0,c1|u:f,c0|f,c0|f,c0
+    collision_radius: 3e-2
+    core_model: postcvpr
+    k_world_edges: 1
+    n_coarse_levels: 3
+runner:
+  from_any_pose:
+    material:
+      bending_coeff_max: 0.0013139737991266374
+      bending_coeff_min: 6.370782056371576e-08
+      density_max: 7e-1
+      density_min: 0.0434
+      lame_lambda_max: 93333.73508005822
+      lame_lambda_min: 3535.414406069427
+      lame_mu_max: 63636
+      lame_mu_min: 15909

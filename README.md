@@ -4,7 +4,7 @@ Github Repository for Thesis Project
 # Requirements
 - Python 3.6+
 - Flask
-- Flutter
+- Appropriate requirements.txt
 
 # Backend Setup
 ```
@@ -30,6 +30,3 @@ Github Repository for Thesis Project
 > 5006: bpy server 
 > 5007: rating 
 ```
-# Envs for servers
-- hmr/hood = conda activate ugh/hood
-- rest is with activate env

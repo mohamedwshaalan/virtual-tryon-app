@@ -19,12 +19,14 @@ from PIL import Image
 from flask import Flask, request, render_template,  send_file
 from io import BytesIO
 
-app = Flask(__name__)
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
+
+import app
 
 # Load the model
-device = torch.device('cuda:0')
+device = torch.device('cpu')
 model = CompatModel(embed_size=1000, need_rep=True, vocabulary=2757).to(device)
-model.load_state_dict(torch.load("/home/group02-f23/Desktop/Thesis/fashion_compatibility_mcn/mcn/model_train.pth", map_location="cuda:0"))
+model.load_state_dict(torch.load("/home/mahdy/Desktop/Backup/Application/virtual-tryon-app/ratingmodel/model2_train.pth", map_location="cpu"))
 model.eval()
 for name, param in model.named_parameters():
     if 'fc' not in name:
@@ -99,6 +101,11 @@ def image_to_base64(image_file):
     base64_encoded_image = base64.b64encode(image_data).decode('utf-8')
     return base64_encoded_image
 
+def image_path_to_base64(file_path):
+    with open(file_path, 'rb') as image_file:
+        image_data = image_file.read()
+        base64_encoded_image = base64.b64encode(image_data).decode('utf-8')
+    return base64_encoded_image
 
 def inference(model, device, my_images):
     model = model.to(device)
@@ -136,35 +143,38 @@ def convert_images_to_base64(request):
 
     return base64_images
 
-@app.route('/predictrating', methods=['POST'])
+@app.rating_app.route('/predictrating', methods=['POST'])
 def predict_rating():
-    # Get the base64 images from the request
-    #base64_images_dict = convert_images_to_base64(request)
     base64_images = {}
-    # for image_key in request.files:
-    #     base64_image = image_to_base64(image_key)
-    #     if isinstance(base64_image, tuple):
-    #         return base64_image
-    #     base64_images[image_key] = base64_image
-    print('the image sent',request.files['bag'])
-    base64_images['top'] = image_to_base64(request.files['top'])
-    base64_images['bottom'] = image_to_base64(request.files['bottom'])
-    base64_images['shoe'] = image_to_base64(request.files['shoe'])
-    base64_images['bag'] = image_to_base64(request.files['bag'])
-    base64_images['accessory'] = image_to_base64(request.files['accessory'])
+    
+    #get ids for all the items from the body
+    
+    data = request.get_json()
+    # top_id = data['top_id']
 
+
+    base64_images['top'] = data['top']
+    base64_images['bottom'] = data['bottom']
+    # base64_images['shoe'] = image_to_base64(request.files['shoe'])
+    # base64_images['bag'] = image_to_base64(request.files['bag'])
+    # base64_images['accessory'] = image_to_base64(request.files['accessory'])
+
+    base64_images['shoe'] = image_path_to_base64('shoe.jpeg')
+    base64_images['bag'] = image_path_to_base64('bag2.png')
+    base64_images['accessory'] = image_path_to_base64('necklace.jpg')
 
 
     # Convert the base64 images to tensors
     img_tensor = base64_to_tensor(base64_images)
     img_tensor.unsqueeze_(0)
     relation, score = defect_detect(img_tensor, model)
-    # Perform inference
-    #outputs = inference(model, device, [top_img, bottom_img, shoe_img, bag_img, accessory_img])
     outputs = {
         "score": score
     }
     return json.dumps(outputs)
 
-if __name__ == "__main__":
-    app.run(port=5003, debug=True)
+if __name__ == '__main__':
+    with app.rating_app.app_context():
+        app.db.create_all()
+
+    app.rating_app.run(host='localhost', port=5007, debug=True)

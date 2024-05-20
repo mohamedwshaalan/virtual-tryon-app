@@ -6,6 +6,7 @@ hmrmodel/deeplab_model/
 micemodel/micevenv/
 micemodel/release_model/
 hmrmodel/hmrvenv/
+hoodmodel/
 comprecmodel/salmarecvenv
 comprecmodel/comprecenv
 comprecmodel/fashion-dataset/

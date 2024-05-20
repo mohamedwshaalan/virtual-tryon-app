@@ -49,10 +49,4 @@ if __name__ == '__main__':
     with app.mice_app.app_context():
         app.db.create_all()
 
-        # user = app.User(email = 'email 1', password = 'password 1', first_name = 'first name 1', body_model=b'', weight= 70, height = 180, gender = 'male')
-        # app.db.session.add(user)
-        # app.db.session.commit()
-
-                    
-
     app.mice_app.run(host='localhost', port=5001, debug=True)

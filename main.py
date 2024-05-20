@@ -37,14 +37,14 @@ def get_item(item_id):
     item = app.Item.query.filter_by(id=item_id).first()
 
     vendor = app.Vendor.query.filter_by(id=item.vendor_id).first()
-
-    item_data = {
+    # print(item.texture)
+    item_data = { 
         'id': item.id, 
         'item_name': item.item_name, 
         'description': item.description, 
-        'front_image': item.front_image.decode('utf-8'), 
+        'front_image': item.front_image.decode('utf-8'),  
         'back_image': item.back_image.decode('utf-8'), 
-        'texture': item.texture.decode('utf-8'), 
+        'texture':item.texture.decode('utf-8') if ((item.texture is None) or (item.texture==b''))  else item.texture, 
         'vendor_name': vendor.vendor_name, 
         'vendor_link' : vendor.vendor_link
     }
@@ -76,6 +76,7 @@ def get_items():
                 'texture': item.texture.decode('utf-8'),
                 'vendor': vendor.vendor_name,
                 'vendor_link': vendor.vendor_link,
+                'item_link': item.item_link,
                 'liked': True,
                 'garment_type': 'top' if item.garment_type_id in (1, 3, 5) else 'bottom'
            }
@@ -111,7 +112,7 @@ def get_likes(user_id):
                 'description': item.description, 
                 'front_image': item.front_image.decode('utf-8'), 
                 'back_image': item.back_image.decode('utf-8'), 
-                'texture': item.texture.decode('utf-8'),
+                'texture': item.texture.decode('utf-8') if ((item.texture is None) or (item.texture==b''))  else item.texture,
                 'vendor': vendor.vendor_name,
                 'vendor_link': vendor.vendor_link}
             output.append(item_data)
@@ -213,9 +214,9 @@ def remove_item():
         return jsonify({'message': 'User does not have permission to remove item from outfit'})
 
     item = app.Item.query.filter_by(id=data['item_id']).first()
-    if item.garment_type_id == 1 or item.garment_type_id == 2 or item.garment_type_id == 3:
+    if item.garment_type_id == 1 or item.garment_type_id == 3 or item.garment_type_id == 5:
         outfit.top_id = None
-    elif item.garment_type_id == 4 or item.garment_type_id == 5:
+    elif item.garment_type_id == 2 or item.garment_type_id == 4:
         outfit.bottom_id = None
     
     if outfit.top_id is None and outfit.bottom_id is None:
@@ -252,6 +253,7 @@ def signup():
         
         new_user = app.User(email=data['email'], password=hashed_password, first_name=data['first_name'], weight = data['weight'], height = data['height'], gender=data['gender']) # Create a new user
         app.db.session.add(new_user)
+        print(new_user.id)
         app.db.session.commit()
         return jsonify({'message': 'User created successfully', 'user_id': new_user.id})
 
@@ -326,7 +328,7 @@ def search():
             'description': item.description, 
             'front_image': item.front_image.decode('utf-8'), 
             'back_image': item.back_image.decode('utf-8'), 
-            'texture': item.texture.decode('utf-8'), 
+            'texture': item.texture.decode('utf-8') if ((item.texture is None) or (item.texture==b''))  else item.texture, 
             'vendor': vendor.vendor_name, 
             'vendor_link': vendor.vendor_link
         }

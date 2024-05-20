@@ -101,4 +101,9 @@ data_app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../database.db'
 data_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(data_app)
 
+rating_app = Flask(__name__, instance_relative_config=False)
+rating_app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../database.db'
+rating_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db.init_app(rating_app)
+
 test_value = "shaalan"

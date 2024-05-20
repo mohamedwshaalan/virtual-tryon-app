@@ -5,12 +5,16 @@ hmrmodel/models/
 hmrmodel/deeplab_model/
 micemodel/micevenv/
 micemodel/release_model/
+ratingmodel/ratingenv
 hmrmodel/hmrvenv/
 hoodmodel/
 comprecmodel/salmarecvenv
 comprecmodel/comprecenv
 comprecmodel/fashion-dataset/
 comprecmodel/df_embeddings.csv
+comprecmodel/embeddings.pkl
+comprecmodel/resnet_model.h5
+ratingmodel/model2_train.pth
 comprecmodel/zara-dataset/
 instance/
 database.db

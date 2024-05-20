@@ -19,7 +19,7 @@ Github Repository for Thesis Project
 > export FLASK_APP=app.py
 > flask run
 ```
-# PORTS FOR SERVERS 
+# Ports for Servers
 ```
 > 5000: main (user) 
 > 5001: MICE  

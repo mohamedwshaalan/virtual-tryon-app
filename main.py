@@ -37,7 +37,6 @@ def get_item(item_id):
     item = app.Item.query.filter_by(id=item_id).first()
 
     vendor = app.Vendor.query.filter_by(id=item.vendor_id).first()
-    # print(item.texture)
     item_data = { 
         'id': item.id, 
         'item_name': item.item_name, 
@@ -50,6 +49,7 @@ def get_item(item_id):
     }
     return jsonify({'item': item_data})
     
+#GET ITEMS   
 @app.main_app.route('/item', methods=['GET'])
 def get_items():
     user_id = request.args.get('user_id')
@@ -174,7 +174,7 @@ def add_outfit():
     item = app.Item.query.filter_by(id=data['item_id']).first()
     if item is None: 
         return jsonify({'message': 'Item not found'})
-    #if the item is a tshirt (1), or polo(2) or jacket(3) then it is a top else bottom
+    #if the item is a tshirt (1), or polo(3) or jacket(5) then it is a top else bottom
     if item.garment_type_id == 1 or item.garment_type_id == 3 or item.garment_type_id == 5:
         new_outfit = app.Outfit(name='Outfit' + str(data['user_id'])+ str(data['item_id']), user_id=data['user_id'], top_id=data['item_id'], bottom_id=None) 
     else:
@@ -287,14 +287,7 @@ def logout():
 @app.main_app.route('/search', methods=['GET'])
 def search():
 
-    #search_query = request.args.get('query')
     search_query = request.args.get('query')
-    #data = request.get_json()
-    #get from args
-
-
-    #search_query = data.get('query')
-
     if not search_query:
         return jsonify({'message': 'No search query provided'})
 
@@ -335,134 +328,9 @@ def search():
         output.append(item_data)
     return jsonify({'items': output})
 
-@app.main_app.route('/model')    
-def get_model():
-    # Replace 'path/to/your/model.glb' with the path to your GLB file
-    model_path = '/home/mahdy/Desktop/flutter_application_1/assets/test.glb'
-    return send_file(model_path, mimetype='model/gltf-binary')
-
 if __name__ == '__main__':
     with app.main_app.app_context():
         app.db.create_all() 
 
-        # garment1 = app.GarmentType(garment_type='top', 
-        #                            object_file=base64.b64encode(open('/home/mahdy/Desktop/resized_garments/T-shirt/medium_tall.obj', 'rb').read()))
-        # garment2 = app.GarmentType(garment_type='bottom',
-        #                             object_file=base64.b64encode(open('/home/mahdy/Desktop/resized_garments/Pants/Medium_Tall.obj', 'rb').read()))
-            
-        # app.db.session.add(garment1)
-        # app.db.session.add(garment2)
-        # app.db.session.commit()
-
-        # garment1 = app.GarmentType(garment_type='top', object_file=b'')
-        # garment2 = app.GarmentType(garment_type='bottom', object_file=b'')
-        # app.db.session.add(garment1)
-        # app.db.session.add(garment2)
-        # app.db.session.commit()
-
-        # # # #create vendors
-        # vendor1 = app.Vendor(vendor_name='Zara', vendor_link='https://www.zara.com')
-        # vendor2 = app.Vendor(vendor_name='H&M', vendor_link='https://www.hm.com')
-        # app.db.session.add(vendor1)
-        # app.db.session.add(vendor2)
-        # app.db.session.commit()
-
-        # # # create an item with the image encoded not the path
-        # #open the image file 
-        # image = open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/front5.jpeg', 'rb')
-
-        # item1 = app.Item(item_name='Salma Shirt', description='A blue shirt', garment_type_id=1, 
-        #             front_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/front5.jpeg', 'rb').read()),
-        #             back_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/back5.jpeg', 'rb').read()), texture=b'', vendor_id=1)
-        # item2 = app.Item(item_name='Salma Pants', description='Black pants', garment_type_id=2, 
-        #             front_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/front19.jpeg', 'rb').read()),
-        #             back_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/back19.jpeg', 'rb').read()), texture=b'', vendor_id=2)
-        # app.db.session.add(item1)
-        # app.db.session.add(item2)
-        # app.db.session.commit()
-
-        # # #create users
-        # user1 = app.User(email = 'email 1', password = 'password 1', first_name = 'first name 1', body_model=b'', weight=150, height=70)
-        # user2 = app.User(email = 'email 2', password = 'password 2', first_name = 'first name 2', body_model=b'', weight=160, height=72)
-        # app.db.session.add(user1)
-        # app.db.session.add(user2)
-        # app.db.session.commit()
-
-        # # # #create outfits
-        # outfit1 = app.Outfit(name='Outfit 1', user_id=1)
-        # outfit2 = app.Outfit(name='Outfit 2', user_id=2)
-        # app.db.session.add(outfit1)
-        # app.db.session.add(outfit2)
-
-        # # # #add items to outfits
-        # outfit1.items.append(item1)
-        # outfit2.items.append(item2)
-        # app.db.session.commit()
-
     app.main_app.run(debug=True)
 
-#populate the db with datafromthefolder
-# Get the path to the folder containing the obj files
-# obj_folder = '/home/mahdy/Desktop/virtual_tryon_app_main/Garment Meshes-20240429T133228Z-001/Garment Meshes'
-
-# # Iterate over the files in the folder
-# for filename in os.listdir(obj_folder):
-#     if filename.endswith('.obj'):
-#         # Read the obj file
-
-
-#         obj_data=base64.b64encode(open(os.path.join(obj_folder, filename), 'rb').read())
-#         # Process the obj data and create a new GarmentType object
-#         garment_type = GarmentType(garment_type=filename[:-4], object_file=obj_data)
-
-#         # Add the garment type to the database
-#         db.session.add(garment_type)
-
-# Commit the changes to the database
-#db.session.commit()
-# # # #populate the db with some data
-# # # #create garment types
-# garment1 = GarmentType(garment_type='top', object_file=b'')
-# garment2 = GarmentType(garment_type='bottom', object_file=b'')
-# db.session.add(garment1)
-# db.session.add(garment2)
-# db.session.commit()
-
-# # # #create vendors
-# vendor1 = Vendor(vendor_name='Zara', vendor_link='https://www.zara.com')
-# vendor2 = Vendor(vendor_name='H&M', vendor_link='https://www.hm.com')
-# db.session.add(vendor1)
-# db.session.add(vendor2)
-# db.session.commit()
-
-# # # create an item with the image encoded not the path
-# #open the image file 
-# image = open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/front5.jpeg', 'rb')
-
-# item1 = Item(item_name='Salma Shirt', description='A blue shirt', garment_type_id=1, 
-#              front_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/front5.jpeg', 'rb').read()),
-#                back_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/back5.jpeg', 'rb').read()), texture=b'', vendor_id=1)
-# item2 = Item(item_name='Salma Pants', description='Black pants', garment_type_id=2, 
-#              front_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/front19.jpeg', 'rb').read()),
-#               back_image=base64.b64encode(open('/home/mahdy/Desktop/Thesis-Flutter-Frontend/assets/images/clothing/back19.jpeg', 'rb').read()), texture=b'', vendor_id=2)
-# db.session.add(item1)
-# db.session.add(item2)
-# db.session.commit()
-
-# # #create users
-# user1 = User(email = 'email 1', password = 'password 1', first_name = 'first name 1', body_model=b'', weight=150, height=70)
-# user2 = User(email = 'email 2', password = 'password 2', first_name = 'first name 2', body_model=b'', weight=160, height=72)
-# db.session.add(user1)
-# db.session.add(user2)
-# db.session.commit()
-
-# # # #create outfits
-# outfit1 = Outfit(name='Outfit 1', user_id=1)
-# outfit2 = Outfit(name='Outfit 2', user_id=2)
-# db.session.add(outfit1)
-# db.session.add(outfit2)
-
-# # # #add items to outfits
-# outfit1.items.append(item1)
-# outfit2.items.append(item2)
-# db.session.commit()

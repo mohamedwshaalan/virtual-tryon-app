@@ -18,6 +18,7 @@ ratingmodel/model2_train.pth
 comprecmodel/zara-dataset/
 instance/
 database.db
-data/
+data/*.jpg
+data/*.obj
 *.tar.gz
 

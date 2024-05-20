@@ -4,7 +4,6 @@ from flask_login import UserMixin
 import os 
 db = SQLAlchemy()
 
-#sanay
 
 outfit_item_association = db.Table('outfit_item_association',
     db.Column('outfit_id', db.Integer, db.ForeignKey('outfit.id'), primary_key=True),
@@ -106,4 +105,3 @@ rating_app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../database.db'
 rating_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(rating_app)
 
-test_value = "shaalan"
